@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getPlayers } from "../../db/site-data";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 
@@ -24,15 +25,21 @@ export async function signUp(formData: FormData) {
   const displayName = String(formData.get("displayName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!displayName || !email || password.length < 8) {
-    redirect(loginPath("error", "이름, 이메일, 8자 이상의 비밀번호를 입력해 주세요."));
+  if (!displayName || displayName.length > 30 || !email || password.length < 8) {
+    redirect(loginPath("error", "1~30자 닉네임, 이메일, 8자 이상의 비밀번호를 입력해 주세요."));
   }
 
-  const { data: users, error: usersError } = await createSupabaseAdminClient()
-    .auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const [usersResult, players] = await Promise.all([
+    createSupabaseAdminClient().auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    getPlayers(),
+  ]);
+  const { data: users, error: usersError } = usersResult;
   if (usersError) redirect(loginPath("error", "이메일 중복 확인에 실패했습니다. 잠시 후 다시 시도해 주세요."));
   if (users.users.some((user) => user.email?.toLowerCase() === email.toLowerCase())) {
     redirect(loginPath("error", "이미 가입된 이메일입니다. 로그인해 주세요."));
+  }
+  if (players.some((player) => player.nickname.toLowerCase() === displayName.toLowerCase())) {
+    redirect(loginPath("error", "이미 사용 중인 닉네임입니다."));
   }
 
   const supabase = await createSupabaseServerClient();

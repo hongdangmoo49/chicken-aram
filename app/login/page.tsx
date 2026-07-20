@@ -35,7 +35,7 @@ export default async function LoginPage({
           </form>
           <form action={signUp} className="form-grid signup-form">
             <h2>회원가입</h2>
-            <div className="field"><label htmlFor="signup-name">표시 이름</label><input id="signup-name" name="displayName" autoComplete="nickname" required /></div>
+            <div className="field"><label htmlFor="signup-name">닉네임</label><input id="signup-name" name="displayName" autoComplete="nickname" maxLength={30} required /></div>
             <div className="field"><label htmlFor="signup-email">이메일</label><input id="signup-email" name="email" type="email" autoComplete="email" required /></div>
             <div className="field"><label htmlFor="signup-password">비밀번호</label><input id="signup-password" name="password" type="password" minLength={8} autoComplete="new-password" required /></div>
             <button className="button signup-button" type="submit">새 계정 만들기</button>
