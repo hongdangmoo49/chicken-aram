@@ -22,7 +22,7 @@ export default async function ProfilePage() {
         <form action="/api/profile/thumbnail" className="thumbnail-form" encType="multipart/form-data" method="post">
           <div className="field"><label htmlFor="thumbnail">새 썸네일</label><input id="thumbnail" name="thumbnail" type="file" accept="image/jpeg,image/png,image/webp" required /></div>
           <p>JPG, PNG, WebP · 최대 3MB · 정사각형 이미지를 권장합니다.</p>
-          <button className="button ghost" type="submit">썸네일 저장</button>
+          <button className="button primary" type="submit">썸네일 저장</button>
         </form>
       </div>
     </section> : <p className="empty panel">프로필을 찾을 수 없습니다.</p>}
