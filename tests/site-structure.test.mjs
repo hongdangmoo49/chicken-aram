@@ -7,6 +7,7 @@ const root = new URL("../", import.meta.url);
 test("ships the requested pages, Supabase auth, and a design contract", async () => {
   await Promise.all([
     access(new URL("app/tiers/page.tsx", root)),
+    access(new URL("app/tiers/tier-drag-board.tsx", root)),
     access(new URL("app/schedule/page.tsx", root)),
     access(new URL("app/results/page.tsx", root)),
     access(new URL("app/toast.tsx", root)),
@@ -16,9 +17,10 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/api/schedule/[id]/route.ts", root)),
     access(new URL("app/admin/members/page.tsx", root)),
   ]);
-  const [design, tiers, schedule, scheduleMutation, siteData, migration, positionMigration, login, profile, membersPage, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, tierDragBoard, schedule, scheduleMutation, siteData, migration, positionMigration, login, profile, membersPage, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
+    readFile(new URL("app/tiers/tier-drag-board.tsx", root), "utf8"),
     readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
     readFile(new URL("app/api/schedule/[id]/route.ts", root), "utf8"),
     readFile(new URL("db/site-data.ts", root), "utf8"),
@@ -44,6 +46,9 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(tiers, /player\.wins.*승.*player\.losses.*패/);
   assert.match(tiers, /PlayerAvatar/);
   assert.match(tiers, /admin && <form action="\/api\/admin\/player-tier"/);
+  assert.match(tiers, /draggable=\{admin\}/);
+  assert.match(tierDragBoard, /handleDrop/);
+  assert.match(tierDragBoard, /fetch\("\/api\/admin\/player-tier"/);
   assert.match(schedule, /isAdmin\(user\.id\)/);
   assert.match(schedule, /scheduledAt\}\+09:00/);
   assert.match(scheduleMutation, /isAdmin\(user\.id\)/);

@@ -125,7 +125,10 @@ button, input, select { font: inherit; }
 .filter-chip { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
 .filter-chip.active { border-color: var(--accent); background: var(--accent-soft); color: #ffad72; }
 .tier-board { display: grid; gap: 16px; }
+.tier-drag-guide { display: flex; justify-content: space-between; gap: 18px; margin-bottom: 14px; padding: 11px 14px; border: 1px solid #70401f; border-radius: 10px; background: var(--accent-soft); color: #ffad72; font-size: 12px; }
+.tier-drag-guide span { color: var(--muted); }
 .tier-section { display: grid; grid-template-columns: 120px 1fr; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.tier-drag-board[data-over-tier="1"] .tier-section[data-tier="1"], .tier-drag-board[data-over-tier="2"] .tier-section[data-tier="2"], .tier-drag-board[data-over-tier="3"] .tier-section[data-tier="3"], .tier-drag-board[data-over-tier="4"] .tier-section[data-tier="4"] { border-color: var(--accent); background: rgba(255,125,42,.06); box-shadow: 0 0 0 2px rgba(255,125,42,.16), 0 12px 35px rgba(0,0,0,.25); }
 .tier-label { display: grid; place-items: center; min-height: 160px; border-right: 1px solid var(--line); background: var(--surface-raised); }
 .tier-label strong { font: 800 42px/1 ui-monospace, monospace; }
 .tier-label span { color: var(--muted); font-size: 11px; }
@@ -135,6 +138,9 @@ button, input, select { font: inherit; }
 .tier-4 .tier-label strong { color: #a77b61; }
 .tier-players { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); grid-auto-rows: minmax(124px, auto); gap: 10px; padding: 18px; }
 .tier-player-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: center; height: 100%; padding: 18px; border: 1px solid var(--line); border-radius: 11px; background: #0e1116; }
+.tier-player-card[draggable="true"] { cursor: grab; transition: opacity .15s ease, transform .15s ease, border-color .15s ease; }
+.tier-player-card[draggable="true"]:hover { border-color: #66503f; }
+.tier-player-card.dragging { opacity: .35; transform: scale(.98); cursor: grabbing; }
 .tier-player-card .avatar { width: 64px; height: 64px; }
 .tier-player-info, .tier-player-rate { display: grid; gap: 5px; }
 .tier-player-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
@@ -145,6 +151,7 @@ button, input, select { font: inherit; }
 .tier-admin-form label { color: var(--muted); font-size: 11px; font-weight: 700; }
 .tier-admin-form select { height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); }
 .tier-admin-form .button { min-height: 34px; padding: 7px 11px; }
+.sr-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 .match-list { display: grid; gap: 12px; }
 .match-list .match-card { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
@@ -275,6 +282,7 @@ button, input, select { font: inherit; }
   .stats-strip div { padding: 18px; }
   .panel { padding: 20px; }
   .tier-section { grid-template-columns: 68px 1fr; }
+  .tier-drag-guide { display: grid; }
   .tier-label strong { font-size: 30px; }
   .tier-players { grid-template-columns: 1fr; grid-auto-rows: minmax(104px, auto); padding: 10px; }
   .tier-player-card { grid-template-columns: 52px minmax(0, 1fr) auto; padding: 14px; }
