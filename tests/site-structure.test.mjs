@@ -10,13 +10,16 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/schedule/page.tsx", root)),
     access(new URL("app/results/page.tsx", root)),
     access(new URL("app/toast.tsx", root)),
+    access(new URL("app/api/admin/role/route.ts", root)),
   ]);
-  const [design, schedule, migration, login, profile, nicknameRoute, thumbnailRoute, authActions, toast, styles] = await Promise.all([
+  const [design, schedule, migration, login, profile, roleRoute, roles, nicknameRoute, thumbnailRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
     readFile(new URL("supabase/migrations/202607200002_remove_mock_data_and_auto_profiles.sql", root), "utf8"),
     readFile(new URL("app/login/page.tsx", root), "utf8"),
     readFile(new URL("app/profile/page.tsx", root), "utf8"),
+    readFile(new URL("app/api/admin/role/route.ts", root), "utf8"),
+    readFile(new URL("app/roles.ts", root), "utf8"),
     readFile(new URL("app/api/profile/nickname/route.ts", root), "utf8"),
     readFile(new URL("app/api/profile/thumbnail/route.ts", root), "utf8"),
     readFile(new URL("app/auth/actions.ts", root), "utf8"),
@@ -30,6 +33,10 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(login, /signUp/);
   assert.match(profile, /api\/profile\/nickname/);
   assert.doesNotMatch(profile, /api\/profile\/claim/);
+  assert.match(profile, /멤버 권한 관리/);
+  assert.match(roleRoute, /isSuperAdmin/);
+  assert.match(roles, /super_admin/);
+  assert.match(roles, /getRole\(userId\)\) !== "user"/);
   assert.match(nicknameRoute, /이미 사용 중인 닉네임/);
   assert.match(nicknameRoute, /redirectWithToast/);
   assert.match(thumbnailRoute, /redirectWithToast/);

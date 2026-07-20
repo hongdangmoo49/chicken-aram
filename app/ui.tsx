@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Match, Player } from "../db/site-data";
 import { getCurrentUser } from "./auth";
 import { signOut } from "./auth/actions";
-import { isAdmin } from "./roles";
+import { getRole, roleLabels } from "./roles";
 
 const nav = [
   ["home", "/", "홈"],
@@ -14,7 +14,7 @@ const nav = [
 
 export async function PageShell({ active, children }: { active: string; children: React.ReactNode }) {
   const user = await getCurrentUser();
-  const admin = user ? await isAdmin(user.id) : false;
+  const role = user ? await getRole(user.id) : null;
   return (
     <>
       <header className="site-header">
@@ -23,7 +23,7 @@ export async function PageShell({ active, children }: { active: string; children
           {nav.map(([key, href, label]) => <Link className={active === key ? "active" : ""} href={href} key={key}>{label}</Link>)}
         </nav>
         <div className="account">
-          {user && <div className="account-copy"><strong>{user.displayName}</strong><span>{admin ? "관리자" : "일반 계정"}</span></div>}
+          {user && role && <div className="account-copy"><strong>{user.displayName}</strong><span>{roleLabels[role]}</span></div>}
           {user ? <form action={signOut}><button className="account-link" type="submit">로그아웃</button></form> : <Link className="account-link" href="/login">로그인</Link>}
         </div>
       </header>
