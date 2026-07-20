@@ -73,7 +73,8 @@ button, input, select { font: inherit; }
 .team { min-width: 0; }
 .team:last-child { text-align: right; }
 .team small { display: block; margin-bottom: 6px; color: var(--muted); font: 700 10px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
-.team strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; }
+.team strong { display: block; font-size: 18px; }
+.team-members { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .team.red strong { color: #ff8b8e; }
 .team.blue strong { color: #8ab1ff; }
 .versus { min-width: 52px; text-align: center; color: var(--muted); font: 800 13px/1 ui-monospace, monospace; }
@@ -95,10 +96,12 @@ button, input, select { font: inherit; }
 .section-heading h2 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
 .section-heading a { color: var(--muted); font-size: 12px; }
 .ranking-list { display: grid; }
-.player-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 12px; align-items: center; min-height: 60px; border-top: 1px solid var(--line); }
+.player-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 12px; align-items: center; min-height: 68px; border-top: 1px solid var(--line); }
 .rank { color: var(--muted); font: 700 13px/1 ui-monospace, monospace; }
 .player-name { display: flex; align-items: center; gap: 10px; min-width: 0; font-weight: 700; }
-.avatar { display: grid; place-items: center; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: #242933; color: var(--accent); font-size: 12px; }
+.avatar { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; background: #242933; color: var(--accent); font-size: 14px; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-large { width: 112px; height: 112px; font-size: 30px; }
 .tier-pill { padding: 3px 7px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); font: 700 10px/1.2 ui-monospace, monospace; }
 .win-rate { min-width: 42px; text-align: right; font: 700 12px/1 ui-monospace, monospace; }
 .compact-matches .match-card { padding: 18px 0; border-top: 1px solid var(--line); }
@@ -125,7 +128,7 @@ button, input, select { font: inherit; }
 
 .match-list { display: grid; gap: 12px; }
 .match-list .match-card { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
-.schedule-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
+.schedule-grid { display: grid; grid-template-columns: minmax(0, 1fr) 480px; gap: 22px; align-items: start; }
 .admin-panel { position: sticky; top: 94px; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 .admin-panel h2 { margin: 0 0 8px; font-size: 19px; }
 .admin-panel > p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
@@ -135,6 +138,29 @@ button, input, select { font: inherit; }
 .field input, .field select { width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; outline: none; background: #0e1116; color: var(--text); }
 .field input:focus, .field select:focus { border-color: var(--accent); }
 .form-grid .button { margin-top: 4px; border: 0; }
+.picker-heading { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-top: 6px; }
+.picker-heading strong { font-size: 12px; }
+.picker-heading span { color: var(--muted); font-size: 10px; text-align: right; }
+.participant-picker { display: grid; max-height: 440px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; background: #0e1116; }
+.participant-option { display: grid; grid-template-columns: minmax(0,1fr) 100px; gap: 8px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.participant-option:last-child { border: 0; }
+.participant-option label { display: flex; align-items: center; gap: 9px; min-width: 0; cursor: pointer; }
+.participant-option input { width: 16px; height: 16px; accent-color: var(--accent); }
+.participant-option .avatar { width: 38px; height: 38px; }
+.participant-option label > span:last-child { display: grid; min-width: 0; }
+.participant-option label strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.participant-option label small { color: var(--muted); font-size: 10px; }
+.participant-option select { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--muted); font-size: 10px; }
+.profile-card { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.profile-identity { display: flex; align-items: center; gap: 22px; }
+.profile-identity h2 { margin: 8px 0 2px; font-size: 28px; }
+.profile-identity p, .thumbnail-form > p, .claim-card > p { margin: 0; color: var(--muted); font-size: 12px; }
+.thumbnail-form { display: grid; gap: 12px; }
+.thumbnail-form input[type="file"] { height: auto; padding: 10px; }
+.claim-card { max-width: 620px; }
+.claim-card h2 { margin-top: 0; }
+.claim-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 22px; }
+.claim-form select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: #0e1116; color: var(--text); }
 .permission-note { padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 13px; }
 .permission-note strong { display: block; margin-bottom: 4px; color: var(--text); }
 .result-summary { display: flex; align-items: center; gap: 8px; }
@@ -149,6 +175,7 @@ button, input, select { font: inherit; }
   .hero-visual { min-height: 580px; }
   .hero-copy p { max-width: 600px; }
   .dashboard-grid, .schedule-grid { grid-template-columns: 1fr; }
+  .profile-card { grid-template-columns: 1fr; }
   .admin-panel { position: static; }
   .tier-players { grid-template-columns: repeat(2, 1fr); }
   .page-intro { display: grid; }
@@ -179,6 +206,8 @@ button, input, select { font: inherit; }
   .tier-label strong { font-size: 30px; }
   .tier-players { grid-template-columns: 1fr; padding: 8px 14px; }
   .tier-players .player-row { min-height: 52px; }
+  .participant-option { grid-template-columns: minmax(0,1fr) 92px; }
+  .claim-form { grid-template-columns: 1fr; }
   .page-intro { margin-bottom: 30px; }
 }
 

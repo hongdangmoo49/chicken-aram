@@ -8,6 +8,7 @@ const nav = [
   ["tiers", "/tiers", "선수 티어"],
   ["schedule", "/schedule", "대전 예정"],
   ["results", "/results", "대전 결과"],
+  ["profile", "/profile", "내 프로필"],
 ] as const;
 
 export async function PageShell({ active, children }: { active: string; children: React.ReactNode }) {
@@ -34,8 +35,12 @@ export function SectionHeading({ kicker, title, href }: { kicker: string; title:
   return <div className="section-heading"><div><p>{kicker}</p><h2>{title}</h2></div><Link href={href}>전체 보기 →</Link></div>;
 }
 
+export function PlayerAvatar({ player, large = false }: { player: Player; large?: boolean }) {
+  return <span className={`avatar${large ? " avatar-large" : ""}`}>{player.thumbnailKey ? <img src={`/api/player-thumbnail/${player.id}`} alt="" /> : player.nickname.slice(0, 1)}</span>;
+}
+
 export function PlayerRow({ player, rank, winRate }: { player: Player; rank: number; winRate: number }) {
-  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><span className="avatar">{player.nickname.slice(0, 1)}</span>{player.nickname}</span><span className="tier-pill">T{player.tier}</span><span className="win-rate">{winRate}%</span></div>;
+  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="tier-pill">T{player.tier}</span><span className="win-rate">{winRate}%</span></div>;
 }
 
 export function MatchCard({ match, featured = false, compact = false }: { match: Match; featured?: boolean; compact?: boolean }) {
@@ -45,11 +50,11 @@ export function MatchCard({ match, featured = false, compact = false }: { match:
     <article className={`match-card${featured ? " featured" : ""}${compact ? " compact" : ""}`}>
       <div className="match-meta"><span>{date}</span><span>{match.map}</span></div>
       <div className="match-teams">
-        <div className="team red"><small>RED TEAM</small><strong>{match.teamRed}</strong></div>
+        <div className="team red"><small>A TEAM</small><strong>A팀</strong><span className="team-members">{match.teamRed}</span></div>
         <div className="versus">{completed ? <span className="score">{match.redScore}:{match.blueScore}</span> : "VS"}</div>
-        <div className="team blue"><small>BLUE TEAM</small><strong>{match.teamBlue}</strong></div>
+        <div className="team blue"><small>B TEAM</small><strong>B팀</strong><span className="team-members">{match.teamBlue}</span></div>
       </div>
-      {!compact && <div className="match-footer"><span className="status">{completed ? "경기 종료" : "참가자 모집 중"}</span><span>{completed && match.mvp ? `MVP · ${match.mvp}` : "5 vs 5 · BO1"}</span></div>}
+      {!compact && <div className="match-footer"><span className="status">{completed ? "경기 종료" : "팀 배정 완료"}</span><span>{completed && match.mvp ? `MVP · ${match.mvp}` : "5 vs 5 · BO1"}</span></div>}
     </article>
   );
 }
