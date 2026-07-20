@@ -136,6 +136,10 @@ button, input, select { font: inherit; }
 .tier-player-info span, .tier-player-rate span { color: var(--muted); font-size: 11px; }
 .tier-player-rate { text-align: right; }
 .tier-player-rate strong { color: var(--accent); font: 800 17px/1 ui-monospace, monospace; }
+.tier-admin-form { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 72px auto; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line); }
+.tier-admin-form label { color: var(--muted); font-size: 11px; font-weight: 700; }
+.tier-admin-form select { height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); }
+.tier-admin-form .button { min-height: 34px; padding: 7px 11px; }
 
 .match-list { display: grid; gap: 12px; }
 .match-list .match-card { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }

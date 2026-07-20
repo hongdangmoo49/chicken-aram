@@ -209,3 +209,14 @@ export async function setPlayerPositions(playerId: number, positions: PlayerPosi
     .eq("id", playerId);
   if (error) fail("선호 포지션 저장 실패", error);
 }
+
+export async function setPlayerTier(playerId: number, tier: number) {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("players")
+    .update({ tier })
+    .eq("id", playerId)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) fail("선수 티어 저장 실패", error);
+}

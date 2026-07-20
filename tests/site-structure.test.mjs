@@ -11,11 +11,12 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/results/page.tsx", root)),
     access(new URL("app/toast.tsx", root)),
     access(new URL("app/api/admin/role/route.ts", root)),
+    access(new URL("app/api/admin/player-tier/route.ts", root)),
     access(new URL("app/api/profile/positions/route.ts", root)),
     access(new URL("app/api/schedule/[id]/route.ts", root)),
     access(new URL("app/admin/members/page.tsx", root)),
   ]);
-  const [design, tiers, schedule, scheduleMutation, siteData, migration, positionMigration, login, profile, membersPage, ui, auth, roleRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, schedule, scheduleMutation, siteData, migration, positionMigration, login, profile, membersPage, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
     readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
@@ -29,6 +30,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("app/ui.tsx", root), "utf8"),
     readFile(new URL("app/auth.ts", root), "utf8"),
     readFile(new URL("app/api/admin/role/route.ts", root), "utf8"),
+    readFile(new URL("app/api/admin/player-tier/route.ts", root), "utf8"),
     readFile(new URL("app/roles.ts", root), "utf8"),
     readFile(new URL("app/api/profile/nickname/route.ts", root), "utf8"),
     readFile(new URL("app/api/profile/thumbnail/route.ts", root), "utf8"),
@@ -41,6 +43,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(tiers, /tier-player-card/);
   assert.match(tiers, /player\.wins.*승.*player\.losses.*패/);
   assert.match(tiers, /PlayerAvatar/);
+  assert.match(tiers, /admin && <form action="\/api\/admin\/player-tier"/);
   assert.match(schedule, /isAdmin\(user\.id\)/);
   assert.match(schedule, /scheduledAt\}\+09:00/);
   assert.match(scheduleMutation, /isAdmin\(user\.id\)/);
@@ -64,6 +67,9 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(auth, /display_name,thumbnail_key/);
   assert.match(roleRoute, /isSuperAdmin/);
   assert.match(roleRoute, /\/admin\/members/);
+  assert.match(tierRoute, /isAdmin\(user\.id\)/);
+  assert.match(tierRoute, /tier < 1 \|\| tier > 4/);
+  assert.match(siteData, /setPlayerTier/);
   assert.match(roles, /super_admin/);
   assert.match(roles, /getRole\(userId\)\) !== "user"/);
   assert.match(nicknameRoute, /이미 사용 중인 닉네임/);
