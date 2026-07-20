@@ -40,7 +40,14 @@ export async function signUp(formData: FormData) {
     },
   });
 
-  if (error) redirect(loginPath("error", "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요."));
+  if (error) {
+    redirect(loginPath(
+      "error",
+      error.code === "over_email_send_rate_limit"
+        ? "인증 메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해 주세요."
+        : "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요.",
+    ));
+  }
   if (data.session) redirect("/profile");
   redirect(loginPath("message", "인증 메일을 보냈습니다. 메일의 링크를 눌러 가입을 완료해 주세요."));
 }
