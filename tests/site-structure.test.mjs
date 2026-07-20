@@ -27,5 +27,6 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(profile, /api\/profile\/nickname/);
   assert.doesNotMatch(profile, /api\/profile\/claim/);
   assert.match(authActions, /admin\.listUsers/);
+  assert.doesNotMatch(authActions, /emailRedirectTo|인증 메일/);
   assert.match(styles, /signup-form:valid/);
 });

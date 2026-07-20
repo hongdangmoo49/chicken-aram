@@ -1,6 +1,5 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
@@ -36,28 +35,15 @@ export async function signUp(formData: FormData) {
     redirect(loginPath("error", "이미 가입된 이메일입니다. 로그인해 주세요."));
   }
 
-  const requestHeaders = await headers();
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? requestHeaders.get("origin") ?? "http://localhost:3000";
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: { display_name: displayName },
-      emailRedirectTo: `${origin}/auth/callback`,
-    },
+    options: { data: { display_name: displayName } },
   });
 
-  if (error) {
-    redirect(loginPath(
-      "error",
-      error.code === "over_email_send_rate_limit"
-        ? "인증 메일 발송 한도를 초과했습니다. 잠시 후 다시 시도해 주세요."
-        : "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요.",
-    ));
-  }
-  if (data.session) redirect("/profile");
-  redirect(loginPath("message", "인증 메일을 보냈습니다. 메일의 링크를 눌러 가입을 완료해 주세요."));
+  if (error) redirect(loginPath("error", "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요."));
+  redirect("/profile");
 }
 
 export async function signOut() {

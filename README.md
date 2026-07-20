@@ -16,7 +16,6 @@ npm run dev
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY`는 서버 전용 비밀키입니다. 이름 앞에 `NEXT_PUBLIC_`을 붙이거나 브라우저 코드에서 사용하면 안 됩니다.
@@ -25,9 +24,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 1. Supabase에서 새 프로젝트를 만듭니다.
 2. SQL Editor에서 [`supabase/migrations/202607200001_initial_schema.sql`](supabase/migrations/202607200001_initial_schema.sql)을 실행합니다.
-3. Authentication의 URL Configuration에 로컬 주소와 Vercel 주소를 등록합니다.
-   - Site URL: 실제 Vercel 배포 주소
-   - Redirect URLs: `http://localhost:3000/**`, `https://실제주소.vercel.app/**`
+3. Authentication → Sign In / Providers에서 `Confirm email`을 끕니다.
 4. 회원가입을 완료한 관리자 계정 하나를 아래 SQL로 승격합니다.
 
 ```sql
@@ -36,11 +33,11 @@ set role = 'admin'
 where id = (select id from auth.users where email = 'admin@example.com');
 ```
 
-마이그레이션은 현재 선수 18명과 예시 대전 기록, RLS 정책, `player-thumbnails` Storage 버킷을 함께 생성합니다.
+마이그레이션은 RLS 정책과 `player-thumbnails` Storage 버킷을 생성합니다.
 
 ## Vercel 배포
 
-GitHub 저장소를 Vercel에 Import한 다음 Framework Preset은 `Next.js`를 사용합니다. Build Command와 Output Directory는 기본값을 유지하고, 프로젝트의 Environment Variables에 `.env.example`의 네 값을 등록합니다. 프로덕션에서는 `NEXT_PUBLIC_SITE_URL`을 실제 `https://...vercel.app` 주소로 설정한 뒤 다시 배포합니다.
+GitHub 저장소를 Vercel에 Import한 다음 Framework Preset은 `Next.js`를 사용합니다. Build Command와 Output Directory는 기본값을 유지하고, 프로젝트의 Environment Variables에 `.env.example`의 세 값을 등록합니다.
 
 ## 검증
 
