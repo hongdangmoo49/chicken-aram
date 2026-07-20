@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
+import type { MemberRoleChange } from "../lib/member-roles";
 
 export type AppRole = "user" | "admin" | "super_admin";
 
@@ -47,14 +48,8 @@ export async function getMembers(): Promise<Member[]> {
   }));
 }
 
-export async function setMemberRole(userId: string, role: Exclude<AppRole, "super_admin">) {
+export async function setMemberRoles(changes: MemberRoleChange[]) {
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from("profiles")
-    .update({ role })
-    .eq("id", userId)
-    .neq("role", "super_admin")
-    .select("id")
-    .maybeSingle();
-  if (error || !data) throw new Error("멤버 권한을 변경하지 못했습니다.");
+  const { error } = await admin.rpc("set_member_roles", { changes });
+  if (error) throw new Error(`멤버 권한 변경 실패: ${error.message}`);
 }
