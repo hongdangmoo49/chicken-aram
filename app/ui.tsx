@@ -23,7 +23,7 @@ export async function PageShell({ active, children }: { active: string; children
           {nav.map(([key, href, label]) => <Link className={active === key ? "active" : ""} href={href} key={key}>{label}</Link>)}
         </nav>
         <div className="account">
-          {user && role && <div className="account-copy"><strong>{user.displayName}</strong><span>{roleLabels[role]}</span></div>}
+          {user && role && <div className="account-profile"><PlayerAvatar player={{ nickname: user.displayName, thumbnailKey: user.thumbnailKey }} /><div className="account-copy"><strong>{user.displayName}</strong><span>{roleLabels[role]}</span></div></div>}
           {user && role !== "user" && <Link className="admin-access-link" href="/admin/members">멤버 관리</Link>}
           {user ? <form action={signOut}><button className="account-link" type="submit">로그아웃</button></form> : <Link className="account-link" href="/login">로그인</Link>}
         </div>
@@ -37,7 +37,7 @@ export function SectionHeading({ kicker, title, href }: { kicker: string; title:
   return <div className="section-heading"><div><p>{kicker}</p><h2>{title}</h2></div><Link href={href}>전체 보기 →</Link></div>;
 }
 
-export function PlayerAvatar({ player, large = false }: { player: Player; large?: boolean }) {
+export function PlayerAvatar({ player, large = false }: { player: Pick<Player, "nickname" | "thumbnailKey">; large?: boolean }) {
   const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const encodedPath = player.thumbnailKey?.split("/").map(encodeURIComponent).join("/");
   const thumbnailUrl = projectUrl && encodedPath ? `${projectUrl}/storage/v1/object/public/player-thumbnails/${encodedPath}` : null;

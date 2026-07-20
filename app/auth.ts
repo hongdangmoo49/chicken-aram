@@ -5,6 +5,7 @@ export type AppUser = {
   id: string;
   email: string;
   displayName: string;
+  thumbnailKey: string | null;
 };
 
 export async function getCurrentUser(): Promise<AppUser | null> {
@@ -14,7 +15,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name,thumbnail_key")
     .eq("id", data.user.id)
     .maybeSingle();
   const displayName =
@@ -23,7 +24,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     data.user.user_metadata?.full_name ??
     data.user.email.split("@")[0];
 
-  return { id: data.user.id, email: data.user.email, displayName };
+  return { id: data.user.id, email: data.user.email, displayName, thumbnailKey: profile?.thumbnail_key ?? null };
 }
 
 export async function requireCurrentUser(returnTo: string): Promise<AppUser> {

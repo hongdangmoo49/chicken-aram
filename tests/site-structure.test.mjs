@@ -13,7 +13,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/api/admin/role/route.ts", root)),
     access(new URL("app/admin/members/page.tsx", root)),
   ]);
-  const [design, schedule, migration, login, profile, membersPage, ui, roleRoute, roles, nicknameRoute, thumbnailRoute, authActions, toast, styles] = await Promise.all([
+  const [design, schedule, migration, login, profile, membersPage, ui, auth, roleRoute, roles, nicknameRoute, thumbnailRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
     readFile(new URL("supabase/migrations/202607200002_remove_mock_data_and_auto_profiles.sql", root), "utf8"),
@@ -21,6 +21,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("app/profile/page.tsx", root), "utf8"),
     readFile(new URL("app/admin/members/page.tsx", root), "utf8"),
     readFile(new URL("app/ui.tsx", root), "utf8"),
+    readFile(new URL("app/auth.ts", root), "utf8"),
     readFile(new URL("app/api/admin/role/route.ts", root), "utf8"),
     readFile(new URL("app/roles.ts", root), "utf8"),
     readFile(new URL("app/api/profile/nickname/route.ts", root), "utf8"),
@@ -41,6 +42,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(membersPage, /role === "super_admin"/);
   assert.match(ui, /role !== "user"/);
   assert.match(ui, /\/admin\/members/);
+  assert.match(ui, /PlayerAvatar player=/);
+  assert.match(auth, /display_name,thumbnail_key/);
   assert.match(roleRoute, /isSuperAdmin/);
   assert.match(roleRoute, /\/admin\/members/);
   assert.match(roles, /super_admin/);
