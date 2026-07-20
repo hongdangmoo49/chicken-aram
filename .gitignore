@@ -42,4 +42,5 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+/supabase/.temp/
 /.codex-dev.*.log
