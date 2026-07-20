@@ -24,6 +24,7 @@ export async function PageShell({ active, children }: { active: string; children
         </nav>
         <div className="account">
           {user && role && <div className="account-copy"><strong>{user.displayName}</strong><span>{roleLabels[role]}</span></div>}
+          {user && role !== "user" && <Link className="admin-access-link" href="/admin/members">멤버 관리</Link>}
           {user ? <form action={signOut}><button className="account-link" type="submit">로그아웃</button></form> : <Link className="account-link" href="/login">로그인</Link>}
         </div>
       </header>

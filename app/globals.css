@@ -45,6 +45,8 @@ button, input, select { font: inherit; }
 .account-copy { display: grid; text-align: right; line-height: 1.2; }
 .account-copy strong { font-size: 12px; }
 .account-copy span { color: var(--muted); font-size: 11px; }
+.admin-access-link { padding: 8px 12px; border: 1px solid #9f5626; border-radius: 8px; color: var(--accent); font-size: 12px; font-weight: 800; }
+.admin-access-link:hover { background: rgba(255, 125, 42, .1); }
 .account-link { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
 
 .page-wrap { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 64px 0 88px; }
