@@ -126,14 +126,14 @@ button, input, select { font: inherit; }
 .tier-2 .tier-label strong { color: #e9d4a5; }
 .tier-3 .tier-label strong { color: #9ba7b8; }
 .tier-4 .tier-label strong { color: #a77b61; }
-.tier-players { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; align-content: start; padding: 18px; }
-.tier-player-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 82px; padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: #0e1116; }
-.tier-player-card .avatar { width: 52px; height: 52px; }
+.tier-players { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); grid-auto-rows: minmax(124px, auto); gap: 10px; padding: 18px; }
+.tier-player-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: center; height: 100%; padding: 18px; border: 1px solid var(--line); border-radius: 11px; background: #0e1116; }
+.tier-player-card .avatar { width: 64px; height: 64px; }
 .tier-player-info, .tier-player-rate { display: grid; gap: 5px; }
-.tier-player-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.tier-player-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
 .tier-player-info span, .tier-player-rate span { color: var(--muted); font-size: 11px; }
 .tier-player-rate { text-align: right; }
-.tier-player-rate strong { color: var(--accent); font: 800 15px/1 ui-monospace, monospace; }
+.tier-player-rate strong { color: var(--accent); font: 800 17px/1 ui-monospace, monospace; }
 
 .match-list { display: grid; gap: 12px; }
 .match-list .match-card { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
@@ -256,7 +256,9 @@ button, input, select { font: inherit; }
   .panel { padding: 20px; }
   .tier-section { grid-template-columns: 68px 1fr; }
   .tier-label strong { font-size: 30px; }
-  .tier-players { grid-template-columns: 1fr; padding: 10px; }
+  .tier-players { grid-template-columns: 1fr; grid-auto-rows: minmax(104px, auto); padding: 10px; }
+  .tier-player-card { grid-template-columns: 52px minmax(0, 1fr) auto; padding: 14px; }
+  .tier-player-card .avatar { width: 52px; height: 52px; }
   .match-admin-actions { display: grid; }
   .match-edit-form { grid-template-columns: 1fr; }
   .match-admin-actions details[open] summary { margin-left: 0; }
