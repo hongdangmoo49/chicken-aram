@@ -11,12 +11,15 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/results/page.tsx", root)),
     access(new URL("app/toast.tsx", root)),
     access(new URL("app/api/admin/role/route.ts", root)),
+    access(new URL("app/api/schedule/[id]/route.ts", root)),
     access(new URL("app/admin/members/page.tsx", root)),
   ]);
-  const [design, tiers, schedule, migration, login, profile, membersPage, ui, auth, roleRoute, roles, nicknameRoute, thumbnailRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, schedule, scheduleMutation, siteData, migration, login, profile, membersPage, ui, auth, roleRoute, roles, nicknameRoute, thumbnailRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
     readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
+    readFile(new URL("app/api/schedule/[id]/route.ts", root), "utf8"),
+    readFile(new URL("db/site-data.ts", root), "utf8"),
     readFile(new URL("supabase/migrations/202607200002_remove_mock_data_and_auto_profiles.sql", root), "utf8"),
     readFile(new URL("app/login/page.tsx", root), "utf8"),
     readFile(new URL("app/profile/page.tsx", root), "utf8"),
@@ -36,6 +39,11 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(tiers, /player\.wins.*승.*player\.losses.*패/);
   assert.match(tiers, /PlayerAvatar/);
   assert.match(schedule, /isAdmin\(user\.id\)/);
+  assert.match(schedule, /scheduledAt\}\+09:00/);
+  assert.match(scheduleMutation, /isAdmin\(user\.id\)/);
+  assert.match(scheduleMutation, /action === "delete"/);
+  assert.match(scheduleMutation, /scheduledAt\}\+09:00/);
+  assert.match(siteData, /eq\("status", "scheduled"\)/);
   assert.match(migration, /delete from public\.matches/);
   assert.match(migration, /new\.raw_user_meta_data/);
   assert.match(login, /signUp/);

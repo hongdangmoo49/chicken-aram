@@ -137,6 +137,18 @@ button, input, select { font: inherit; }
 
 .match-list { display: grid; gap: 12px; }
 .match-list .match-card { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
+.scheduled-match.manageable .match-card { border-radius: 13px 13px 0 0; }
+.match-admin-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 13px 13px; background: var(--surface-raised); }
+.match-admin-actions details { min-width: 70px; }
+.match-admin-actions summary { padding: 7px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: 12px; font-weight: 700; text-align: center; cursor: pointer; list-style: none; }
+.match-admin-actions summary::-webkit-details-marker { display: none; }
+.match-admin-actions details[open] { flex: 1; }
+.match-admin-actions details[open] summary { width: fit-content; margin-left: auto; }
+.match-edit-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(140px, .7fr) auto; gap: 10px; align-items: end; margin-top: 12px; }
+.match-edit-form .button { min-height: 42px; }
+.delete-action form { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; }
+.delete-action p { margin: 0; color: var(--muted); font-size: 12px; }
+.button.danger { border-color: #7d3434; background: #451f1f; color: #ffb0a8; }
 .schedule-grid { display: grid; grid-template-columns: minmax(0, 1fr) 480px; gap: 22px; align-items: start; }
 .admin-panel { position: sticky; top: 94px; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 .admin-panel h2 { margin: 0 0 8px; font-size: 19px; }
@@ -245,6 +257,10 @@ button, input, select { font: inherit; }
   .tier-section { grid-template-columns: 68px 1fr; }
   .tier-label strong { font-size: 30px; }
   .tier-players { grid-template-columns: 1fr; padding: 10px; }
+  .match-admin-actions { display: grid; }
+  .match-edit-form { grid-template-columns: 1fr; }
+  .match-admin-actions details[open] summary { margin-left: 0; }
+  .delete-action form { display: grid; justify-content: stretch; }
   .participant-option { grid-template-columns: minmax(0,1fr) 92px; }
   .page-intro { margin-bottom: 30px; }
 }

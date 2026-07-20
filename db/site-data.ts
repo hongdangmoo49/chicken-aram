@@ -127,6 +127,30 @@ export async function createBalancedSchedule(input: {
   }
 }
 
+export async function updateScheduledMatch(id: number, scheduledAt: string, map: string) {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("matches")
+    .update({ scheduled_at: scheduledAt, map })
+    .eq("id", id)
+    .eq("status", "scheduled")
+    .select("id")
+    .maybeSingle();
+  if (error || !data) fail("예정 대전 수정 실패", error);
+}
+
+export async function deleteScheduledMatch(id: number) {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("matches")
+    .delete()
+    .eq("id", id)
+    .eq("status", "scheduled")
+    .select("id")
+    .maybeSingle();
+  if (error || !data) fail("예정 대전 삭제 실패", error);
+}
+
 export async function getPlayerProfile(userId: string): Promise<PlayerProfile | null> {
   const admin = createSupabaseAdminClient();
   const { data: profile, error: profileError } = await admin

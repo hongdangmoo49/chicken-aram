@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await createBalancedSchedule({ scheduledAt: new Date(scheduledAt).toISOString(), map, playerIds, separatedGroups: [...groups.values()], createdBy: user.id });
+    await createBalancedSchedule({ scheduledAt: new Date(`${scheduledAt}+09:00`).toISOString(), map, playerIds, separatedGroups: [...groups.values()], createdBy: user.id });
   } catch (error) {
     return redirectWithToast(request, "/schedule", "error", error instanceof Error ? error.message : "팀을 나누지 못했습니다.");
   }
