@@ -170,6 +170,8 @@ button, input, select { font: inherit; }
 .auth-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 .auth-grid form { padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: #0e1116; }
 .auth-grid h2 { margin: 0 0 8px; font-size: 18px; }
+.signup-button { border-color: var(--line); background: transparent; color: var(--muted); cursor: not-allowed; }
+.signup-form:valid .signup-button { background: var(--accent); color: #160b03; cursor: pointer; }
 .form-message { margin: 0 0 20px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; font-size: 13px; }
 .form-message.error { border-color: #70322f; background: #211313; color: #ffb0aa; }
 .form-message.success { border-color: #365d44; background: #102018; color: #9de0b2; }
