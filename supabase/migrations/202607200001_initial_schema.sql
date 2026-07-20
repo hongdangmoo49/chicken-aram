@@ -42,6 +42,7 @@ create table public.match_players (
 );
 
 create index players_tier_idx on public.players (tier);
+create unique index if not exists players_nickname_lower_key on public.players (lower(btrim(nickname)));
 create index matches_status_scheduled_at_idx on public.matches (status, scheduled_at desc);
 create index profiles_player_id_idx on public.profiles (player_id);
 
