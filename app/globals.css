@@ -147,6 +147,8 @@ button, input, select { font: inherit; }
 .tier-player-card[draggable="true"] { cursor: grab; transition: opacity .15s ease, transform .15s ease, border-color .15s ease; }
 .tier-player-card[draggable="true"]:hover { border-color: #66503f; }
 .tier-player-card.dragging { opacity: .35; transform: scale(.98); cursor: grabbing; }
+.tier-player-card.drop-before { box-shadow: -5px 0 0 var(--accent); }
+.tier-player-card.drop-after { box-shadow: 5px 0 0 var(--accent); }
 .tier-player-card .avatar { width: 64px; height: 64px; }
 .tier-player-info, .tier-player-rate { display: grid; gap: 5px; }
 .tier-player-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }

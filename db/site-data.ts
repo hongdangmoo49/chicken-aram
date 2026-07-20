@@ -12,6 +12,7 @@ export type Player = {
   losses: number;
   thumbnailKey: string | null;
   positions: PlayerPosition[];
+  tierOrder: number | null;
 };
 
 export type Match = {
@@ -37,7 +38,7 @@ export async function getPlayers(): Promise<Player[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("players")
-    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions");
+    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions,tier_order");
   if (error) fail("선수 목록 조회 실패", error);
 
   return (data ?? [])
@@ -49,9 +50,11 @@ export async function getPlayers(): Promise<Player[]> {
       losses: player.losses,
       thumbnailKey: player.thumbnail_path,
       positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
+      tierOrder: player.tier_order,
     }))
     .sort((a, b) => {
       if (a.tier !== b.tier) return a.tier - b.tier;
+      if (a.tierOrder !== null || b.tierOrder !== null) return (a.tierOrder ?? Number.MAX_SAFE_INTEGER) - (b.tierOrder ?? Number.MAX_SAFE_INTEGER);
       const aGames = a.wins + a.losses;
       const bGames = b.wins + b.losses;
       const aRate = aGames ? a.wins / aGames : 0;
@@ -167,7 +170,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
 
   const { data: player, error: playerError } = await admin
     .from("players")
-    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions")
+    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions,tier_order")
     .eq("id", profile.player_id)
     .single();
   if (playerError || !player) fail("선수 프로필 조회 실패", playerError);
@@ -179,6 +182,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
     losses: player.losses,
     thumbnailKey: player.thumbnail_path,
     positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
+    tierOrder: player.tier_order,
   };
 }
 

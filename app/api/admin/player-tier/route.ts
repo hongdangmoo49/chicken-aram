@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   const form = await request.formData();
   let value: unknown;
   try {
-    value = form.has("changes") ? JSON.parse(String(form.get("changes"))) : [{ playerId: form.get("playerId"), tier: form.get("tier") }];
+    value = form.has("changes") ? JSON.parse(String(form.get("changes"))) : [{ playerId: form.get("playerId"), tier: form.get("tier"), order: form.get("order") ?? 0 }];
   } catch { value = null; }
   const changes = normalizeTierChanges(value);
   if (!changes) return redirectWithToast(request, "/tiers", "error", "변경할 선수와 티어를 확인해 주세요.");
