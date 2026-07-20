@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const players = sqliteTable("players", {
   id: integer("id").primaryKey({ autoIncrement: true }),
@@ -20,3 +20,16 @@ export const matches = sqliteTable("matches", {
   mvp: text("mvp"),
   createdBy: text("created_by").notNull(),
 });
+
+export const playerProfiles = sqliteTable("player_profiles", {
+  playerId: integer("player_id").primaryKey().references(() => players.id),
+  email: text("email").notNull().unique(),
+  thumbnailKey: text("thumbnail_key"),
+});
+
+export const matchPlayers = sqliteTable("match_players", {
+  matchId: integer("match_id").notNull().references(() => matches.id),
+  playerId: integer("player_id").notNull().references(() => players.id),
+  team: text("team", { enum: ["A", "B"] }).notNull(),
+  separatedGroup: integer("separated_group"),
+}, (table) => [primaryKey({ columns: [table.matchId, table.playerId] })]);
