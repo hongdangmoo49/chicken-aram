@@ -12,7 +12,13 @@ export async function getCurrentUser(): Promise<AppUser | null> {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user?.email) return null;
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", data.user.id)
+    .maybeSingle();
   const displayName =
+    profile?.display_name ??
     data.user.user_metadata?.display_name ??
     data.user.user_metadata?.full_name ??
     data.user.email.split("@")[0];

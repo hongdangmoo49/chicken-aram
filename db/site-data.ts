@@ -153,29 +153,15 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
   };
 }
 
-export async function getUnclaimedPlayers(): Promise<Player[]> {
+export async function setPlayerNickname(userId: string, nickname: string) {
   const admin = createSupabaseAdminClient();
-  const [players, profilesResult] = await Promise.all([
-    getPlayers(),
-    admin.from("profiles").select("player_id").not("player_id", "is", null),
-  ]);
-  if (profilesResult.error) fail("연결된 선수 조회 실패", profilesResult.error);
-  const claimedIds = new Set(
-    (profilesResult.data ?? []).map((profile) => Number(profile.player_id)),
-  );
-  return players.filter((player) => !claimedIds.has(player.id));
-}
-
-export async function claimPlayer(userId: string, playerId: number) {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
+  const { error } = await admin
     .from("profiles")
-    .update({ player_id: playerId })
+    .update({ display_name: nickname })
     .eq("id", userId)
-    .is("player_id", null)
     .select("id")
-    .maybeSingle();
-  if (error || !data) fail("선수 프로필 연결 실패", error);
+    .single();
+  if (error) fail("선수 닉네임 저장 실패", error);
 }
 
 export async function setPlayerThumbnail(playerId: number, thumbnailKey: string) {

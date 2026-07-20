@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return new Response("로그인이 필요합니다.", { status: 401 });
   const profile = await getPlayerProfile(user.id);
-  if (!profile) return new Response("선수 프로필을 먼저 연결해 주세요.", { status: 403 });
+  if (!profile) return new Response("프로필을 찾을 수 없습니다.", { status: 404 });
 
   const form = await request.formData();
   const file = form.get("thumbnail");

@@ -154,13 +154,10 @@ button, input, select { font: inherit; }
 .profile-card { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
 .profile-identity { display: flex; align-items: center; gap: 22px; }
 .profile-identity h2 { margin: 8px 0 2px; font-size: 28px; }
-.profile-identity p, .thumbnail-form > p, .claim-card > p { margin: 0; color: var(--muted); font-size: 12px; }
+.profile-identity p, .thumbnail-form > p { margin: 0; color: var(--muted); font-size: 12px; }
+.profile-forms { display: grid; gap: 24px; }
 .thumbnail-form { display: grid; gap: 12px; }
 .thumbnail-form input[type="file"] { height: auto; padding: 10px; }
-.claim-card { max-width: 620px; }
-.claim-card h2 { margin-top: 0; }
-.claim-form { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 22px; }
-.claim-form select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; background: #0e1116; color: var(--text); }
 .permission-note { padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 13px; }
 .permission-note strong { display: block; margin-bottom: 4px; color: var(--text); }
 
@@ -221,7 +218,6 @@ button, input, select { font: inherit; }
   .tier-players { grid-template-columns: 1fr; padding: 8px 14px; }
   .tier-players .player-row { min-height: 52px; }
   .participant-option { grid-template-columns: minmax(0,1fr) 92px; }
-  .claim-form { grid-template-columns: 1fr; }
   .page-intro { margin-bottom: 30px; }
 }
 
