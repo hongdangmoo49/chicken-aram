@@ -4,21 +4,19 @@ import { redirect } from "next/navigation";
 import { getPlayers } from "../../db/site-data";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
-
-function loginPath(kind: "error" | "message", value: string) {
-  return `/login?${kind}=${encodeURIComponent(value)}`;
-}
+import { withToast } from "../../lib/toast";
 
 export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const returnTo = String(formData.get("returnTo") ?? "/profile");
-  if (!email || !password) redirect(loginPath("error", "이메일과 비밀번호를 입력해 주세요."));
+  if (!email || !password) redirect(withToast("/login", "error", "이메일과 비밀번호를 입력해 주세요."));
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) redirect(loginPath("error", "이메일 또는 비밀번호를 확인해 주세요."));
-  redirect(returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/profile");
+  if (error) redirect(withToast("/login", "error", "이메일 또는 비밀번호를 확인해 주세요."));
+  const destination = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/profile";
+  redirect(withToast(destination, "success", "로그인했습니다."));
 }
 
 export async function signUp(formData: FormData) {
@@ -26,7 +24,7 @@ export async function signUp(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   if (!displayName || displayName.length > 30 || !email || password.length < 8) {
-    redirect(loginPath("error", "1~30자 닉네임, 이메일, 8자 이상의 비밀번호를 입력해 주세요."));
+    redirect(withToast("/login", "error", "1~30자 닉네임, 이메일, 8자 이상의 비밀번호를 입력해 주세요."));
   }
 
   const [usersResult, players] = await Promise.all([
@@ -34,12 +32,12 @@ export async function signUp(formData: FormData) {
     getPlayers(),
   ]);
   const { data: users, error: usersError } = usersResult;
-  if (usersError) redirect(loginPath("error", "이메일 중복 확인에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+  if (usersError) redirect(withToast("/login", "error", "이메일 중복 확인에 실패했습니다. 잠시 후 다시 시도해 주세요."));
   if (users.users.some((user) => user.email?.toLowerCase() === email.toLowerCase())) {
-    redirect(loginPath("error", "이미 가입된 이메일입니다. 로그인해 주세요."));
+    redirect(withToast("/login", "error", "이미 가입된 이메일입니다. 로그인해 주세요."));
   }
   if (players.some((player) => player.nickname.toLowerCase() === displayName.toLowerCase())) {
-    redirect(loginPath("error", "이미 사용 중인 닉네임입니다."));
+    redirect(withToast("/login", "error", "이미 사용 중인 닉네임입니다."));
   }
 
   const supabase = await createSupabaseServerClient();
@@ -49,12 +47,12 @@ export async function signUp(formData: FormData) {
     options: { data: { display_name: displayName } },
   });
 
-  if (error) redirect(loginPath("error", "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요."));
-  redirect("/profile");
+  if (error) redirect(withToast("/login", "error", "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요."));
+  redirect(withToast("/profile", "success", "회원가입이 완료되었습니다."));
 }
 
 export async function signOut() {
   const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
-  redirect("/");
+  const { error } = await supabase.auth.signOut();
+  redirect(withToast("/", error ? "error" : "success", error ? "로그아웃하지 못했습니다." : "로그아웃했습니다."));
 }

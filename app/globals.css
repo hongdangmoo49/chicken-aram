@@ -172,9 +172,12 @@ button, input, select { font: inherit; }
 .auth-grid h2 { margin: 0 0 8px; font-size: 18px; }
 .signup-button { border-color: var(--line); background: transparent; color: var(--muted); cursor: not-allowed; }
 .signup-form:valid .signup-button { background: var(--accent); color: #160b03; cursor: pointer; }
-.form-message { margin: 0 0 20px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; font-size: 13px; }
-.form-message.error { border-color: #70322f; background: #211313; color: #ffb0aa; }
-.form-message.success { border-color: #365d44; background: #102018; color: #9de0b2; }
+.toast { position: fixed; z-index: 100; top: 88px; right: max(18px, calc((100vw - 1180px) / 2)); display: grid; grid-template-columns: 28px minmax(0, 1fr) 24px; gap: 10px; align-items: center; width: min(390px, calc(100vw - 36px)); padding: 13px 14px; border: 1px solid; border-radius: 12px; background: rgba(17,20,26,.97); box-shadow: 0 18px 50px rgba(0,0,0,.45); backdrop-filter: blur(14px); font-size: 13px; font-weight: 650; animation: toast-in .2s ease-out; }
+.toast-success { border-color: #365d44; color: #b8f1c9; }
+.toast-error { border-color: #70322f; color: #ffc0bb; }
+.toast-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: currentColor; color: #101319; font-weight: 900; }
+.toast button { border: 0; background: transparent; color: currentColor; cursor: pointer; font-size: 22px; line-height: 1; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } }
 .result-summary { display: flex; align-items: center; gap: 8px; }
 .result-summary .winner { color: var(--green); }
 .empty { padding: 36px; text-align: center; color: var(--muted); }

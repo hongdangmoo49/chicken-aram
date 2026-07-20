@@ -9,7 +9,7 @@ export const metadata = { title: "로그인" };
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string; returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   if (await getCurrentUser()) redirect("/profile");
   const params = await searchParams;
@@ -23,8 +23,6 @@ export default async function LoginPage({
           <h1>내전 계정</h1>
           <p>로그인하면 본인의 선수 프로필과 썸네일을 직접 관리할 수 있습니다.</p>
         </div>
-        {params.error && <p className="form-message error" role="alert">{params.error}</p>}
-        {params.message && <p className="form-message success">{params.message}</p>}
         <div className="auth-grid">
           <form action={signIn} className="form-grid">
             <h2>로그인</h2>
