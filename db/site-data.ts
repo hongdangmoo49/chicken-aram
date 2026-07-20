@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import { createSupabaseServerClient } from "../lib/supabase/server";
+import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-positions";
 import { balanceTeams } from "./team-balance";
 
 export type Player = {
@@ -9,6 +10,7 @@ export type Player = {
   wins: number;
   losses: number;
   thumbnailKey: string | null;
+  positions: PlayerPosition[];
 };
 
 export type Match = {
@@ -34,7 +36,7 @@ export async function getPlayers(): Promise<Player[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("players")
-    .select("id,nickname,tier,wins,losses,thumbnail_path");
+    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions");
   if (error) fail("선수 목록 조회 실패", error);
 
   return (data ?? [])
@@ -45,6 +47,7 @@ export async function getPlayers(): Promise<Player[]> {
       wins: player.wins,
       losses: player.losses,
       thumbnailKey: player.thumbnail_path,
+      positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
     }))
     .sort((a, b) => {
       if (a.tier !== b.tier) return a.tier - b.tier;
@@ -163,7 +166,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
 
   const { data: player, error: playerError } = await admin
     .from("players")
-    .select("id,nickname,tier,wins,losses,thumbnail_path")
+    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions")
     .eq("id", profile.player_id)
     .single();
   if (playerError || !player) fail("선수 프로필 조회 실패", playerError);
@@ -174,6 +177,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
     wins: player.wins,
     losses: player.losses,
     thumbnailKey: player.thumbnail_path,
+    positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
   };
 }
 
@@ -195,4 +199,13 @@ export async function setPlayerThumbnail(playerId: number, thumbnailKey: string)
     .update({ thumbnail_path: thumbnailKey })
     .eq("id", playerId);
   if (error) fail("선수 썸네일 저장 실패", error);
+}
+
+export async function setPlayerPositions(playerId: number, positions: PlayerPosition[]) {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin
+    .from("players")
+    .update({ preferred_positions: positions })
+    .eq("id", playerId);
+  if (error) fail("선호 포지션 저장 실패", error);
 }

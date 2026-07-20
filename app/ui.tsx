@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Match, Player } from "../db/site-data";
+import type { PlayerPosition } from "../lib/player-positions";
 import { getCurrentUser } from "./auth";
 import { signOut } from "./auth/actions";
 import { getRole, roleLabels } from "./roles";
@@ -45,7 +46,11 @@ export function PlayerAvatar({ player, large = false }: { player: Pick<Player, "
 }
 
 export function PlayerRow({ player, rank, winRate }: { player: Player; rank: number; winRate: number }) {
-  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="tier-pill">T{player.tier}</span><span className="win-rate">{winRate}%</span></div>;
+  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="player-tags"><span className="tier-pill">T{player.tier}</span><PlayerPositions positions={player.positions} /></span><span className="win-rate">{winRate}%</span></div>;
+}
+
+export function PlayerPositions({ positions }: { positions: readonly PlayerPosition[] }) {
+  return positions.length ? <span className="position-list">{positions.map((position) => <span className="position-chip" key={position}>{position}</span>)}</span> : null;
 }
 
 export function MatchCard({ match, featured = false, compact = false }: { match: Match; featured?: boolean; compact?: boolean }) {

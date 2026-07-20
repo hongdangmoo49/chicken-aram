@@ -11,16 +11,18 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/results/page.tsx", root)),
     access(new URL("app/toast.tsx", root)),
     access(new URL("app/api/admin/role/route.ts", root)),
+    access(new URL("app/api/profile/positions/route.ts", root)),
     access(new URL("app/api/schedule/[id]/route.ts", root)),
     access(new URL("app/admin/members/page.tsx", root)),
   ]);
-  const [design, tiers, schedule, scheduleMutation, siteData, migration, login, profile, membersPage, ui, auth, roleRoute, roles, nicknameRoute, thumbnailRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, schedule, scheduleMutation, siteData, migration, positionMigration, login, profile, membersPage, ui, auth, roleRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
     readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
     readFile(new URL("app/api/schedule/[id]/route.ts", root), "utf8"),
     readFile(new URL("db/site-data.ts", root), "utf8"),
     readFile(new URL("supabase/migrations/202607200002_remove_mock_data_and_auto_profiles.sql", root), "utf8"),
+    readFile(new URL("supabase/migrations/202607200006_add_player_positions.sql", root), "utf8"),
     readFile(new URL("app/login/page.tsx", root), "utf8"),
     readFile(new URL("app/profile/page.tsx", root), "utf8"),
     readFile(new URL("app/admin/members/page.tsx", root), "utf8"),
@@ -30,6 +32,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("app/roles.ts", root), "utf8"),
     readFile(new URL("app/api/profile/nickname/route.ts", root), "utf8"),
     readFile(new URL("app/api/profile/thumbnail/route.ts", root), "utf8"),
+    readFile(new URL("app/api/profile/positions/route.ts", root), "utf8"),
     readFile(new URL("app/auth/actions.ts", root), "utf8"),
     readFile(new URL("app/toast.tsx", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
@@ -46,8 +49,11 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(siteData, /eq\("status", "scheduled"\)/);
   assert.match(migration, /delete from public\.matches/);
   assert.match(migration, /new\.raw_user_meta_data/);
+  assert.match(positionMigration, /cardinality\(preferred_positions\) <= 3/);
+  assert.match(positionMigration, /올라운더/);
   assert.match(login, /signUp/);
   assert.match(profile, /api\/profile\/nickname/);
+  assert.match(profile, /PositionPicker/);
   assert.doesNotMatch(profile, /api\/profile\/claim/);
   assert.doesNotMatch(profile, /멤버 권한 관리/);
   assert.match(membersPage, /멤버 권한 관리/);
@@ -63,6 +69,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(nicknameRoute, /이미 사용 중인 닉네임/);
   assert.match(nicknameRoute, /redirectWithToast/);
   assert.match(thumbnailRoute, /redirectWithToast/);
+  assert.match(positionRoute, /normalizePlayerPositions/);
   assert.match(authActions, /admin\.listUsers/);
   assert.match(authActions, /이미 사용 중인 닉네임/);
   assert.match(authActions, /로그인했습니다/);
