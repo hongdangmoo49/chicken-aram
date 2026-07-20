@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Match, Player } from "../db/site-data";
-import { chatGPTSignInPath, chatGPTSignOutPath, getChatGPTUser } from "./chatgpt-auth";
+import { getCurrentUser } from "./auth";
+import { signOut } from "./auth/actions";
 import { isAdmin } from "./roles";
 
 const nav = [
@@ -12,8 +13,8 @@ const nav = [
 ] as const;
 
 export async function PageShell({ active, children }: { active: string; children: React.ReactNode }) {
-  const user = await getChatGPTUser();
-  const admin = user ? isAdmin(user.email) : false;
+  const user = await getCurrentUser();
+  const admin = user ? await isAdmin(user.id) : false;
   return (
     <>
       <header className="site-header">
@@ -23,7 +24,7 @@ export async function PageShell({ active, children }: { active: string; children
         </nav>
         <div className="account">
           {user && <div className="account-copy"><strong>{user.displayName}</strong><span>{admin ? "관리자" : "일반 계정"}</span></div>}
-          <Link className="account-link" href={user ? chatGPTSignOutPath() : chatGPTSignInPath("/")}>{user ? "로그아웃" : "로그인"}</Link>
+          {user ? <form action={signOut}><button className="account-link" type="submit">로그아웃</button></form> : <Link className="account-link" href="/login">로그인</Link>}
         </div>
       </header>
       <main className="page-wrap">{children}</main>
@@ -36,7 +37,10 @@ export function SectionHeading({ kicker, title, href }: { kicker: string; title:
 }
 
 export function PlayerAvatar({ player, large = false }: { player: Player; large?: boolean }) {
-  return <span className={`avatar${large ? " avatar-large" : ""}`}>{player.thumbnailKey ? <img src={`/api/player-thumbnail/${player.id}`} alt="" /> : player.nickname.slice(0, 1)}</span>;
+  const projectUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const encodedPath = player.thumbnailKey?.split("/").map(encodeURIComponent).join("/");
+  const thumbnailUrl = projectUrl && encodedPath ? `${projectUrl}/storage/v1/object/public/player-thumbnails/${encodedPath}` : null;
+  return <span className={`avatar${large ? " avatar-large" : ""}`}>{thumbnailUrl ? <img src={thumbnailUrl} alt="" /> : player.nickname.slice(0, 1)}</span>;
 }
 
 export function PlayerRow({ player, rank, winRate }: { player: Player; rank: number; winRate: number }) {

@@ -1,13 +1,13 @@
 import { getPlayerProfile, getUnclaimedPlayers } from "../../db/site-data";
-import { requireChatGPTUser } from "../chatgpt-auth";
+import { requireCurrentUser } from "../auth";
 import { PageShell, PlayerAvatar } from "../ui";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "내 프로필" };
 
 export default async function ProfilePage() {
-  const user = await requireChatGPTUser("/profile");
-  const [profile, unclaimed] = await Promise.all([getPlayerProfile(user.email), getUnclaimedPlayers()]);
+  const user = await requireCurrentUser("/profile");
+  const [profile, unclaimed] = await Promise.all([getPlayerProfile(user.id), getUnclaimedPlayers()]);
   return <PageShell active="profile">
     <header className="page-intro"><div><span className="eyebrow">PLAYER PROFILE</span><h1>내 프로필</h1></div><p>처음 한 번 닉네임을 연결하면 이후에는 직접 선수 썸네일을 바꿀 수 있습니다.</p></header>
     {profile ? <section className="profile-card panel">

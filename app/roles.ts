@@ -1,6 +1,12 @@
-import { env } from "cloudflare:workers";
+import { createSupabaseAdminClient } from "../lib/supabase/admin";
 
-export function isAdmin(email: string): boolean {
-  const configured = (env as unknown as { ADMIN_EMAILS?: string }).ADMIN_EMAILS ?? "";
-  return configured.split(",").some((entry) => entry.trim().toLowerCase() === email.toLowerCase());
+export async function isAdmin(userId: string): Promise<boolean> {
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw new Error(`관리자 권한 조회 실패: ${error.message}`);
+  return data?.role === "admin";
 }

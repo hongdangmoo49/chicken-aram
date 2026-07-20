@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { createBalancedSchedule } from "../../../db/site-data";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getCurrentUser } from "../../auth";
 import { isAdmin } from "../../roles";
 
 export async function POST(request: Request) {
-  const user = await getChatGPTUser();
+  const user = await getCurrentUser();
   if (!user) return new Response("로그인이 필요합니다.", { status: 401 });
-  if (!isAdmin(user.email)) return new Response("관리자 권한이 필요합니다.", { status: 403 });
+  if (!(await isAdmin(user.id))) return new Response("관리자 권한이 필요합니다.", { status: 403 });
 
   const form = await request.formData();
   const scheduledAt = String(form.get("scheduledAt") ?? "").trim();
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await createBalancedSchedule({ scheduledAt: new Date(scheduledAt).toISOString(), map, playerIds, separatedGroups: [...groups.values()], createdBy: user.email });
+    await createBalancedSchedule({ scheduledAt: new Date(scheduledAt).toISOString(), map, playerIds, separatedGroups: [...groups.values()], createdBy: user.id });
   } catch (error) {
     return new Response(error instanceof Error ? error.message : "팀을 나누지 못했습니다.", { status: 400 });
   }

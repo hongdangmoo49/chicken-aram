@@ -1,5 +1,5 @@
 import { getMatches, getPlayers } from "../../db/site-data";
-import { getChatGPTUser } from "../chatgpt-auth";
+import { getCurrentUser } from "../auth";
 import { isAdmin } from "../roles";
 import { MatchCard, PageShell, PlayerAvatar } from "../ui";
 
@@ -7,9 +7,9 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "대전 예정" };
 
 export default async function SchedulePage() {
-  const [matches, players, user] = await Promise.all([getMatches(), getPlayers(), getChatGPTUser()]);
+  const [matches, players, user] = await Promise.all([getMatches(), getPlayers(), getCurrentUser()]);
   const upcoming = matches.filter((match) => match.status === "scheduled");
-  const admin = user ? isAdmin(user.email) : false;
+  const admin = user ? await isAdmin(user.id) : false;
   return <PageShell active="schedule">
     <header className="page-intro"><div><span className="eyebrow">UPCOMING MATCHES</span><h1>대전 예정</h1></div><p>참가자 10명을 고르면 티어와 승률을 기준으로 가장 균형에 가까운 A팀과 B팀을 만듭니다.</p></header>
     <div className="schedule-grid">
