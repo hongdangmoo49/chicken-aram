@@ -107,6 +107,11 @@ button, input, select { font: inherit; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar-large { width: 112px; height: 112px; font-size: 30px; }
 .tier-pill { padding: 3px 7px; border: 1px solid var(--line); border-radius: 5px; color: var(--muted); font: 700 10px/1.2 ui-monospace, monospace; }
+.profile-tier { padding: 5px 10px; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+.tier-badge-1 { border-color: #ffae42; background: linear-gradient(135deg, #7a2600 0%, #ff6b00 34%, #ffd36a 62%, #8d3500 100%); color: #fff8df; box-shadow: 0 0 0 1px rgba(255,211,106,.25), 0 5px 18px rgba(255,107,0,.3); text-shadow: 0 1px 3px #702000; }
+.tier-badge-2 { border-color: #c9a85f; background: linear-gradient(135deg, #604815, #d7b763 55%, #6f5520); color: #fff4c9; box-shadow: 0 4px 12px rgba(190,148,53,.18); }
+.tier-badge-3 { border-color: #64758d; background: linear-gradient(135deg, #263345, #7d91aa); color: #e7effa; }
+.tier-badge-4 { border-color: #3b414c; background: #20242b; color: #aeb5c0; }
 .player-tags, .profile-tags, .position-list { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; }
 .position-chip { padding: 3px 7px; border: 1px solid #60432f; border-radius: 999px; background: rgba(255, 125, 42, .08); color: #ffad72; font-size: 10px; font-weight: 750; white-space: nowrap; }
 .win-rate { min-width: 42px; text-align: right; font: 700 12px/1 ui-monospace, monospace; }

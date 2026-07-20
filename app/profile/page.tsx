@@ -12,7 +12,7 @@ export default async function ProfilePage() {
   return <PageShell active="profile">
     <header className="page-intro"><div><span className="eyebrow">PLAYER PROFILE</span><h1>내 프로필</h1></div><p>가입할 때 입력한 닉네임과 선수 썸네일을 직접 수정할 수 있습니다.</p></header>
     {profile ? <section className="profile-card panel">
-      <div className="profile-identity"><PlayerAvatar player={profile} large /><div><div className="profile-tags"><span className="tier-pill">T{profile.tier}</span><PlayerPositions positions={profile.positions} /></div><h2>{profile.nickname}</h2><p>{profile.wins}승 {profile.losses}패 · {user.email}</p></div></div>
+      <div className="profile-identity"><PlayerAvatar player={profile} large /><div><div className="profile-tags"><span className={`tier-pill profile-tier tier-badge-${profile.tier}`}>T{profile.tier}</span><PlayerPositions positions={profile.positions} /></div><h2>{profile.nickname}</h2><p>{profile.wins}승 {profile.losses}패 · {user.email}</p></div></div>
       <div className="profile-forms">
         <form action="/api/profile/nickname" className="form-grid" method="post">
           <div className="field"><label htmlFor="nickname">닉네임</label><input id="nickname" name="nickname" defaultValue={profile.nickname} maxLength={30} required /></div>

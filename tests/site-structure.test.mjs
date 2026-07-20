@@ -57,6 +57,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(login, /signUp/);
   assert.match(profile, /api\/profile\/nickname/);
   assert.match(profile, /PositionPicker/);
+  assert.match(profile, /tier-badge-\$\{profile\.tier\}/);
   assert.doesNotMatch(profile, /api\/profile\/claim/);
   assert.doesNotMatch(profile, /멤버 권한 관리/);
   assert.match(membersPage, /멤버 권한 관리/);
@@ -83,4 +84,6 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(toast, /role=\{type === "error" \? "alert" : "status"\}/);
   assert.match(styles, /signup-form:valid/);
   assert.match(styles, /toast-success/);
+  assert.match(styles, /tier-badge-1.*linear-gradient/);
+  assert.match(styles, /tier-badge-4.*background: #20242b/);
 });
