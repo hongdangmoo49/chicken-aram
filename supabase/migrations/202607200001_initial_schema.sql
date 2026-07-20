@@ -1,4 +1,4 @@
-create type public.app_role as enum ('user', 'admin');
+create type public.app_role as enum ('user', 'admin', 'super_admin');
 create type public.match_status as enum ('scheduled', 'completed');
 create type public.match_team as enum ('A', 'B');
 
