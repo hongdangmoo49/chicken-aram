@@ -18,7 +18,7 @@ export default async function Home() {
       <section className="hero">
         <div className="hero-copy">
           <span className="eyebrow">CHICKEN ARAM · SEASON 01</span>
-          <h1>내전의 모든 순간을<br />한눈에.</h1>
+          <h1>ㅊㅈ? ㅊㅈ!</h1>
           <p>예정된 매치부터 결과, 선수 티어와 승률까지. 증강 칼바람 내전의 공식 기록실입니다.</p>
           <div className="hero-actions">
             <Link className="button primary" href="/schedule">다음 대전 보기 <span>→</span></Link>
