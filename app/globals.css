@@ -126,9 +126,14 @@ button, input, select { font: inherit; }
 .tier-2 .tier-label strong { color: #e9d4a5; }
 .tier-3 .tier-label strong { color: #9ba7b8; }
 .tier-4 .tier-label strong { color: #a77b61; }
-.tier-players { display: grid; grid-template-columns: repeat(3, 1fr); padding: 12px 22px; }
-.tier-players .player-row { grid-template-columns: 28px 1fr auto; padding: 4px 10px; }
-.tier-players .tier-pill { display: none; }
+.tier-players { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; align-content: start; padding: 18px; }
+.tier-player-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; min-height: 82px; padding: 14px; border: 1px solid var(--line); border-radius: 11px; background: #0e1116; }
+.tier-player-card .avatar { width: 52px; height: 52px; }
+.tier-player-info, .tier-player-rate { display: grid; gap: 5px; }
+.tier-player-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.tier-player-info span, .tier-player-rate span { color: var(--muted); font-size: 11px; }
+.tier-player-rate { text-align: right; }
+.tier-player-rate strong { color: var(--accent); font: 800 15px/1 ui-monospace, monospace; }
 
 .match-list { display: grid; gap: 12px; }
 .match-list .match-card { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
@@ -213,7 +218,6 @@ button, input, select { font: inherit; }
   .profile-card { grid-template-columns: 1fr; }
   .auth-grid { grid-template-columns: 1fr; }
   .admin-panel { position: static; }
-  .tier-players { grid-template-columns: repeat(2, 1fr); }
   .page-intro { display: grid; }
 }
 
@@ -240,8 +244,7 @@ button, input, select { font: inherit; }
   .panel { padding: 20px; }
   .tier-section { grid-template-columns: 68px 1fr; }
   .tier-label strong { font-size: 30px; }
-  .tier-players { grid-template-columns: 1fr; padding: 8px 14px; }
-  .tier-players .player-row { min-height: 52px; }
+  .tier-players { grid-template-columns: 1fr; padding: 10px; }
   .participant-option { grid-template-columns: minmax(0,1fr) 92px; }
   .page-intro { margin-bottom: 30px; }
 }
