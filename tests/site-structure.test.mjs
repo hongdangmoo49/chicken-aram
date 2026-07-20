@@ -17,7 +17,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/api/schedule/[id]/route.ts", root)),
     access(new URL("app/admin/members/page.tsx", root)),
   ]);
-  const [design, tiers, tierDragBoard, schedule, scheduleMutation, siteData, migration, positionMigration, login, profile, membersPage, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, tierDragBoard, schedule, scheduleMutation, siteData, migration, positionMigration, batchTierMigration, login, profile, membersPage, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
     readFile(new URL("app/tiers/tier-drag-board.tsx", root), "utf8"),
@@ -26,6 +26,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("db/site-data.ts", root), "utf8"),
     readFile(new URL("supabase/migrations/202607200002_remove_mock_data_and_auto_profiles.sql", root), "utf8"),
     readFile(new URL("supabase/migrations/202607200006_add_player_positions.sql", root), "utf8"),
+    readFile(new URL("supabase/migrations/202607200007_batch_player_tiers.sql", root), "utf8"),
     readFile(new URL("app/login/page.tsx", root), "utf8"),
     readFile(new URL("app/profile/page.tsx", root), "utf8"),
     readFile(new URL("app/admin/members/page.tsx", root), "utf8"),
@@ -42,12 +43,13 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("app/globals.css", root), "utf8"),
   ]);
   assert.match(design, /Responsive Rules/);
-  assert.match(tiers, /tier-player-card/);
-  assert.match(tiers, /player\.wins.*승.*player\.losses.*패/);
-  assert.match(tiers, /PlayerAvatar/);
-  assert.match(tiers, /admin && <form action="\/api\/admin\/player-tier"/);
-  assert.match(tiers, /draggable=\{admin\}/);
+  assert.match(tiers, /TierDragBoard admin=\{admin\}/);
+  assert.match(tierDragBoard, /tier-player-card/);
+  assert.match(tierDragBoard, /player\.wins.*승.*player\.losses.*패/);
+  assert.match(tierDragBoard, /PlayerAvatar/);
+  assert.match(tierDragBoard, /draggable=\{admin\}/);
   assert.match(tierDragBoard, /handleDrop/);
+  assert.match(tierDragBoard, /변경사항 저장/);
   assert.match(tierDragBoard, /fetch\("\/api\/admin\/player-tier"/);
   assert.match(schedule, /isAdmin\(user\.id\)/);
   assert.match(schedule, /scheduledAt\}\+09:00/);
@@ -59,6 +61,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(migration, /new\.raw_user_meta_data/);
   assert.match(positionMigration, /cardinality\(preferred_positions\) <= 3/);
   assert.match(positionMigration, /올라운더/);
+  assert.match(batchTierMigration, /set_player_tiers/);
+  assert.match(batchTierMigration, /updated_count <> jsonb_array_length/);
   assert.match(login, /signUp/);
   assert.match(profile, /api\/profile\/nickname/);
   assert.match(profile, /PositionPicker/);
@@ -74,8 +78,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(roleRoute, /isSuperAdmin/);
   assert.match(roleRoute, /\/admin\/members/);
   assert.match(tierRoute, /isAdmin\(user\.id\)/);
-  assert.match(tierRoute, /tier < 1 \|\| tier > 4/);
-  assert.match(siteData, /setPlayerTier/);
+  assert.match(tierRoute, /normalizeTierChanges/);
+  assert.match(siteData, /setPlayerTiers/);
   assert.match(roles, /super_admin/);
   assert.match(roles, /getRole\(userId\)\) !== "user"/);
   assert.match(nicknameRoute, /이미 사용 중인 닉네임/);

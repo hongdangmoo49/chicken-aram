@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-positions";
+import type { PlayerTierChange } from "../lib/player-tiers";
 import { balanceTeams } from "./team-balance";
 
 export type Player = {
@@ -210,13 +211,8 @@ export async function setPlayerPositions(playerId: number, positions: PlayerPosi
   if (error) fail("선호 포지션 저장 실패", error);
 }
 
-export async function setPlayerTier(playerId: number, tier: number) {
+export async function setPlayerTiers(changes: PlayerTierChange[]) {
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from("players")
-    .update({ tier })
-    .eq("id", playerId)
-    .select("id")
-    .maybeSingle();
-  if (error || !data) fail("선수 티어 저장 실패", error);
+  const { error } = await admin.rpc("set_player_tiers", { changes });
+  if (error) fail("선수 티어 저장 실패", error);
 }

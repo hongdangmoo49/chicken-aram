@@ -127,6 +127,12 @@ button, input, select { font: inherit; }
 .tier-board { display: grid; gap: 16px; }
 .tier-drag-guide { display: flex; justify-content: space-between; gap: 18px; margin-bottom: 14px; padding: 11px 14px; border: 1px solid #70401f; border-radius: 10px; background: var(--accent-soft); color: #ffad72; font-size: 12px; }
 .tier-drag-guide span { color: var(--muted); }
+.tier-save-bar { position: sticky; z-index: 12; top: 82px; display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid #70401f; border-radius: 11px; background: rgba(17,20,26,.96); box-shadow: 0 12px 30px rgba(0,0,0,.28); backdrop-filter: blur(12px); }
+.tier-save-bar > span { color: var(--muted); font-size: 12px; }
+.tier-save-bar > span strong { color: var(--accent); font-size: 16px; }
+.tier-save-bar > div { display: flex; gap: 8px; }
+.tier-save-bar .button { min-height: 36px; padding: 8px 12px; }
+.tier-save-bar .button:disabled { opacity: .4; cursor: not-allowed; }
 .tier-section { display: grid; grid-template-columns: 120px 1fr; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
 .tier-drag-board[data-over-tier="1"] .tier-section[data-tier="1"], .tier-drag-board[data-over-tier="2"] .tier-section[data-tier="2"], .tier-drag-board[data-over-tier="3"] .tier-section[data-tier="3"], .tier-drag-board[data-over-tier="4"] .tier-section[data-tier="4"] { border-color: var(--accent); background: rgba(255,125,42,.06); box-shadow: 0 0 0 2px rgba(255,125,42,.16), 0 12px 35px rgba(0,0,0,.25); }
 .tier-label { display: grid; place-items: center; min-height: 160px; border-right: 1px solid var(--line); background: var(--surface-raised); }
@@ -147,10 +153,9 @@ button, input, select { font: inherit; }
 .tier-player-info span, .tier-player-rate span { color: var(--muted); font-size: 11px; }
 .tier-player-rate { text-align: right; }
 .tier-player-rate strong { color: var(--accent); font: 800 17px/1 ui-monospace, monospace; }
-.tier-admin-form { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 72px auto; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line); }
+.tier-admin-form { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 88px; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line); cursor: default; }
 .tier-admin-form label { color: var(--muted); font-size: 11px; font-weight: 700; }
 .tier-admin-form select { height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); }
-.tier-admin-form .button { min-height: 34px; padding: 7px 11px; }
 .sr-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 .match-list { display: grid; gap: 12px; }
@@ -283,6 +288,7 @@ button, input, select { font: inherit; }
   .panel { padding: 20px; }
   .tier-section { grid-template-columns: 68px 1fr; }
   .tier-drag-guide { display: grid; }
+  .tier-save-bar { top: 72px; }
   .tier-label strong { font-size: 30px; }
   .tier-players { grid-template-columns: 1fr; grid-auto-rows: minmax(104px, auto); padding: 10px; }
   .tier-player-card { grid-template-columns: 52px minmax(0, 1fr) auto; padding: 14px; }
