@@ -25,12 +25,15 @@ export default async function Home() {
             <Link className="button ghost" href="/tiers">티어표 확인</Link>
           </div>
         </div>
-        <div className="hero-match">
-          <div className="hero-match-top">
-            <span className="live-dot" /> NEXT MATCH
-            <span>{upcoming[0]?.map ?? "증강 칼바람 협곡"}</span>
+        <div className="hero-visual">
+          <img className="hero-image" src="/main-character.jpg" alt="치킨을 먹고 있는 포로 캐릭터" />
+          <div className="hero-match">
+            <div className="hero-match-top">
+              <span className="live-dot" /> NEXT MATCH
+              <span>{upcoming[0]?.map ?? "증강 칼바람 협곡"}</span>
+            </div>
+            {upcoming[0] ? <MatchCard match={upcoming[0]} featured /> : <p className="empty">예정된 대전이 없습니다.</p>}
           </div>
-          {upcoming[0] ? <MatchCard match={upcoming[0]} featured /> : <p className="empty">예정된 대전이 없습니다.</p>}
         </div>
       </section>
 
