@@ -1,4 +1,4 @@
-import { deleteScheduledMatch, updateScheduledMatch } from "../../../../db/site-data";
+import { deleteScheduledMatch, rebalanceScheduledMatch, updateScheduledMatch } from "../../../../db/site-data";
 import { redirectWithToast } from "../../../../lib/toast-response";
 import { getCurrentUser } from "../../../auth";
 import { isAdmin } from "../../../roles";
@@ -23,10 +23,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const scheduledAt = String(form.get("scheduledAt") ?? "").trim();
     const map = String(form.get("map") ?? "").trim();
-    if (action !== "update" || !scheduledAt || Number.isNaN(Date.parse(scheduledAt)) || !maps.has(map)) {
+    if ((action !== "update" && action !== "rebalance") || !scheduledAt || Number.isNaN(Date.parse(scheduledAt)) || !maps.has(map)) {
       return redirectWithToast(request, "/schedule", "error", "수정할 일시와 맵을 확인해 주세요.");
     }
-    await updateScheduledMatch(id, new Date(`${scheduledAt}+09:00`).toISOString(), map);
+    const scheduledAtIso = new Date(`${scheduledAt}+09:00`).toISOString();
+    if (action === "rebalance") {
+      const playerIds = [...new Set(form.getAll("players").map(Number).filter(Number.isInteger))];
+      if (playerIds.length !== 10) return redirectWithToast(request, "/schedule", "error", "팀 재편성에 참가할 선수 10명을 선택해 주세요.");
+      const groups = new Map<number, number[]>();
+      for (const playerId of playerIds) {
+        const group = Number(form.get(`group_${playerId}`));
+        if (Number.isInteger(group) && group >= 1 && group <= 5) groups.set(group, [...(groups.get(group) ?? []), playerId]);
+      }
+      await rebalanceScheduledMatch({ id, scheduledAt: scheduledAtIso, map, playerIds, separatedGroups: [...groups.values()] });
+      return redirectWithToast(request, "/schedule", "success", "일정과 팀을 재편성했습니다.");
+    }
+    await updateScheduledMatch(id, scheduledAtIso, map);
     return redirectWithToast(request, "/schedule", "success", "예정 대전을 수정했습니다.");
   } catch (error) {
     return redirectWithToast(request, "/schedule", "error", error instanceof Error ? error.message : "예정 대전을 변경하지 못했습니다.");

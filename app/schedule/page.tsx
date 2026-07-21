@@ -1,4 +1,4 @@
-import { getMatches, getPlayers } from "../../db/site-data";
+import { getMatchParticipants, getMatches, getPlayers } from "../../db/site-data";
 import { getCurrentUser } from "../auth";
 import { isAdmin } from "../roles";
 import { MatchCard, PageShell } from "../ui";
@@ -13,24 +13,27 @@ function localDateTime(value: string) {
 }
 
 export default async function SchedulePage() {
-  const [matches, players, user] = await Promise.all([getMatches(), getPlayers(), getCurrentUser()]);
+  const [matches, players, members, user] = await Promise.all([getMatches(), getPlayers(), getMatchParticipants(), getCurrentUser()]);
   const upcoming = matches.filter((match) => match.status === "scheduled");
   const admin = user ? await isAdmin(user.id) : false;
   return <PageShell active="schedule">
     <header className="page-intro"><div><span className="eyebrow">UPCOMING MATCHES</span><h1>대전 예정</h1></div><p>참가자 10명을 고르면 티어와 승률을 기준으로 가장 균형에 가까운 A팀과 B팀을 만듭니다.</p></header>
     <div className="schedule-grid">
-      <div className="match-list">{upcoming.length ? upcoming.map((match) => <div className={`scheduled-match${admin ? " manageable" : ""}`} key={match.id}>
+      <div className="match-list">{upcoming.length ? upcoming.map((match) => {
+        const matchMembers = members.filter((member) => member.matchId === match.id);
+        const initialGroups = Object.fromEntries(matchMembers.filter((member) => member.separatedGroup !== null).map((member) => [member.playerId, member.separatedGroup!])) as Record<number, number>;
+        return <div className={`scheduled-match${admin ? " manageable" : ""}`} key={match.id}>
         <MatchCard match={match} />
         {admin && <div className="match-admin-actions">
-          <details><summary>수정</summary><form action={`/api/schedule/${match.id}`} className="match-edit-form" method="post">
-            <input name="action" type="hidden" value="update" />
+          <details><summary>수정 · 팀 재편성</summary><form action={`/api/schedule/${match.id}`} className="match-edit-form" method="post">
             <div className="field"><label htmlFor={`scheduledAt-${match.id}`}>일시</label><input id={`scheduledAt-${match.id}`} name="scheduledAt" type="datetime-local" defaultValue={localDateTime(match.scheduledAt)} required /></div>
             <div className="field"><label htmlFor={`map-${match.id}`}>맵</label><select id={`map-${match.id}`} name="map" defaultValue={match.map}>{maps.map((map) => <option key={map}>{map}</option>)}</select></div>
-            <button className="button primary" type="submit">수정 저장</button>
+            <ParticipantPicker initialGroups={initialGroups} initialSelectedIds={matchMembers.map((member) => member.playerId)} players={players} />
+            <div className="match-edit-actions"><button className="button ghost" name="action" type="submit" value="update">일정만 저장</button><button className="button primary" name="action" type="submit" value="rebalance">팀 재편성</button></div>
           </form></details>
           <details className="delete-action"><summary>삭제</summary><form action={`/api/schedule/${match.id}`} method="post"><input name="action" type="hidden" value="delete" /><p>삭제하면 복구할 수 없습니다.</p><button className="button danger" type="submit">삭제 확정</button></form></details>
         </div>}
-      </div>) : <p className="empty panel">예정된 대전이 없습니다.</p>}</div>
+      </div>;}) : <p className="empty panel">예정된 대전이 없습니다.</p>}</div>
       <aside className="admin-panel team-builder">
         <h2>새 대전 · 팀 나누기</h2><p>관리자 전용 · 정확히 10명을 선택하세요.</p>
         {admin ? <form action="/api/schedule" className="form-grid" method="post">

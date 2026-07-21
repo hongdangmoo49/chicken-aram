@@ -19,7 +19,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/admin/members/page.tsx", root)),
     access(new URL("app/admin/members/member-role-editor.tsx", root)),
   ]);
-  const [design, tiers, tierDragBoard, schedule, scheduleMutation, results, resultRoute, siteData, migration, positionMigration, batchTierMigration, tierOrderMigration, batchRoleMigration, resultMigration, login, profile, membersPage, memberRoleEditor, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, tierDragBoard, schedule, scheduleMutation, results, resultRoute, siteData, migration, positionMigration, batchTierMigration, tierOrderMigration, batchRoleMigration, resultMigration, rebalanceMigration, login, profile, membersPage, memberRoleEditor, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
     readFile(new URL("app/tiers/tier-drag-board.tsx", root), "utf8"),
@@ -34,6 +34,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("supabase/migrations/202607200008_add_tier_order.sql", root), "utf8"),
     readFile(new URL("supabase/migrations/202607200009_batch_member_roles.sql", root), "utf8"),
     readFile(new URL("supabase/migrations/202607210010_save_match_results.sql", root), "utf8"),
+    readFile(new URL("supabase/migrations/202607210011_rebalance_scheduled_match.sql", root), "utf8"),
     readFile(new URL("app/login/page.tsx", root), "utf8"),
     readFile(new URL("app/profile/page.tsx", root), "utf8"),
     readFile(new URL("app/admin/members/page.tsx", root), "utf8"),
@@ -65,6 +66,10 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(scheduleMutation, /isAdmin\(user\.id\)/);
   assert.match(scheduleMutation, /action === "delete"/);
   assert.match(scheduleMutation, /scheduledAt\}\+09:00/);
+  assert.match(scheduleMutation, /rebalanceScheduledMatch/);
+  assert.match(siteData, /rpc\("rebalance_scheduled_match"/);
+  assert.match(rebalanceMigration, /delete from public\.match_players/);
+  assert.match(rebalanceMigration, /current_status <> 'scheduled'/);
   assert.match(results, /대전 결과 등록/);
   assert.match(results, /결과 수정/);
   assert.match(resultRoute, /isAdmin\(user\.id\)/);

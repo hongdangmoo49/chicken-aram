@@ -172,6 +172,8 @@ button, input, select { font: inherit; }
 .match-admin-actions details[open] summary { width: fit-content; margin-left: auto; }
 .match-edit-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(140px, .7fr) auto; gap: 10px; align-items: end; margin-top: 12px; }
 .match-edit-form .button { min-height: 42px; }
+.match-edit-form .picker-heading, .match-edit-form .participant-picker, .match-edit-actions { grid-column: 1 / -1; }
+.match-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .result-entry-panel { margin-bottom: 34px; }
 .result-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 18px; }
 .result-section-heading h2 { margin: 6px 0 0; font-size: 24px; }
@@ -311,6 +313,7 @@ button, input, select { font: inherit; }
   .result-form { grid-template-columns: 1fr; }
   .result-form .button { grid-column: auto; }
   .match-edit-form { grid-template-columns: 1fr; }
+  .match-edit-actions { display: grid; }
   .match-admin-actions details[open] summary { margin-left: 0; }
   .delete-action form { display: grid; justify-content: stretch; }
   .participant-option { grid-template-columns: minmax(0,1fr) 92px; }

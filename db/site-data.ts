@@ -35,6 +35,7 @@ export type MatchParticipant = {
   matchId: number;
   playerId: number;
   team: MatchWinner;
+  separatedGroup: number | null;
 };
 
 export type PlayerProfile = Player;
@@ -98,9 +99,9 @@ export async function getMatches(): Promise<Match[]> {
 
 export async function getMatchParticipants(): Promise<MatchParticipant[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team");
+  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group");
   if (error) fail("대전 참가자 조회 실패", error);
-  return (data ?? []).map((member) => ({ matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner }));
+  return (data ?? []).map((member) => ({ matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group }));
 }
 
 export async function createBalancedSchedule(input: {
@@ -162,6 +163,19 @@ export async function updateScheduledMatch(id: number, scheduledAt: string, map:
     .select("id")
     .maybeSingle();
   if (error || !data) fail("예정 대전 수정 실패", error);
+}
+
+export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: string; map: string; playerIds: number[]; separatedGroups: number[][] }) {
+  const allPlayers = await getPlayers();
+  const selected = input.playerIds.map((id) => allPlayers.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
+  const admin = createSupabaseAdminClient();
+  const { data: currentMembers, error: memberError } = await admin.from("match_players").select("player_id,team").eq("match_id", input.id);
+  if (memberError) fail("기존 팀 조회 실패", memberError);
+  const { teamA, teamB } = balanceTeams(selected, input.separatedGroups, (currentMembers ?? []).filter((member) => member.team === "A").map((member) => Number(member.player_id)));
+  const groupByPlayer = new Map(input.separatedGroups.flatMap((group, index) => group.map((id) => [id, index + 1] as const)));
+  const assignments = [...teamA.map((player) => ({ playerId: player.id, team: "A" as const })), ...teamB.map((player) => ({ playerId: player.id, team: "B" as const }))].map((assignment) => ({ ...assignment, separatedGroup: groupByPlayer.get(assignment.playerId) ?? null }));
+  const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments });
+  if (error) fail("팀 재편성 실패", error);
 }
 
 export async function deleteScheduledMatch(id: number) {

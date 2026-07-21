@@ -8,4 +8,6 @@ test("balances ten players while separating a requested pair", () => {
   assert.equal(result.teamA.length, 5);
   assert.equal(result.teamB.length, 5);
   assert.notEqual(result.teamA.some((player) => player.id === 1), result.teamA.some((player) => player.id === 2));
+  const rebalanced = balanceTeams(players, [[1, 2]], result.teamA.map((player) => player.id));
+  assert.notDeepEqual(new Set(rebalanced.teamA.map((player) => player.id)), new Set(result.teamA.map((player) => player.id)));
 });
