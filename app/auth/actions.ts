@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getPlayers } from "../../db/site-data";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { withToast } from "../../lib/toast";
@@ -27,16 +26,17 @@ export async function signUp(formData: FormData) {
     redirect(withToast("/login", "error", "1~30자 닉네임, 이메일, 8자 이상의 비밀번호를 입력해 주세요."));
   }
 
-  const [usersResult, players] = await Promise.all([
-    createSupabaseAdminClient().auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    getPlayers(),
+  const admin = createSupabaseAdminClient();
+  const [usersResult, profilesResult] = await Promise.all([
+    admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    admin.from("profiles").select("display_name"),
   ]);
   const { data: users, error: usersError } = usersResult;
-  if (usersError) redirect(withToast("/login", "error", "이메일 중복 확인에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+  if (usersError || profilesResult.error) redirect(withToast("/login", "error", "계정 중복 확인에 실패했습니다. 잠시 후 다시 시도해 주세요."));
   if (users.users.some((user) => user.email?.toLowerCase() === email.toLowerCase())) {
     redirect(withToast("/login", "error", "이미 가입된 이메일입니다. 로그인해 주세요."));
   }
-  if (players.some((player) => player.nickname.toLowerCase() === displayName.toLowerCase())) {
+  if ((profilesResult.data ?? []).some((profile) => profile.display_name?.trim().toLowerCase() === displayName.toLowerCase())) {
     redirect(withToast("/login", "error", "이미 사용 중인 닉네임입니다."));
   }
 

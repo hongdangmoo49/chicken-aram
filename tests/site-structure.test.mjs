@@ -19,7 +19,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/admin/members/page.tsx", root)),
     access(new URL("app/admin/members/member-role-editor.tsx", root)),
   ]);
-  const [design, tiers, tierDragBoard, schedule, scheduleMutation, results, resultRoute, siteData, migration, positionMigration, batchTierMigration, tierOrderMigration, batchRoleMigration, resultMigration, rebalanceMigration, login, profile, membersPage, memberRoleEditor, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, tierDragBoard, schedule, scheduleMutation, results, resultRoute, siteData, migration, positionMigration, batchTierMigration, tierOrderMigration, batchRoleMigration, resultMigration, rebalanceMigration, historicalMigration, login, profile, membersPage, memberRoleEditor, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
     readFile(new URL("app/tiers/tier-drag-board.tsx", root), "utf8"),
@@ -35,6 +35,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("supabase/migrations/202607200009_batch_member_roles.sql", root), "utf8"),
     readFile(new URL("supabase/migrations/202607210010_save_match_results.sql", root), "utf8"),
     readFile(new URL("supabase/migrations/202607210011_rebalance_scheduled_match.sql", root), "utf8"),
+    readFile(new URL("supabase/migrations/202607220012_import_historical_matches.sql", root), "utf8"),
     readFile(new URL("app/login/page.tsx", root), "utf8"),
     readFile(new URL("app/profile/page.tsx", root), "utf8"),
     readFile(new URL("app/admin/members/page.tsx", root), "utf8"),
@@ -91,6 +92,10 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(resultMigration, /save_match_result/);
   assert.match(resultMigration, /current_status = 'completed'/);
   assert.match(resultMigration, /wins = player\.wins -/);
+  assert.match(historicalMigration, /recalculate_player_records/);
+  assert.match(historicalMigration, /lower\(btrim\(player\.nickname\)\) = lower\(nickname\)/);
+  assert.match(historicalMigration, /'2026-07-16 23:00:00\+09'/);
+  assert.match(historicalMigration, /'무사시'/);
   assert.match(login, /signUp/);
   assert.match(profile, /api\/profile\/nickname/);
   assert.match(profile, /PositionPicker/);
@@ -119,6 +124,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(thumbnailRoute, /redirectWithToast/);
   assert.match(positionRoute, /normalizePlayerPositions/);
   assert.match(authActions, /admin\.listUsers/);
+  assert.match(authActions, /from\("profiles"\)\.select\("display_name"\)/);
   assert.match(authActions, /이미 사용 중인 닉네임/);
   assert.match(authActions, /로그인했습니다/);
   assert.doesNotMatch(authActions, /emailRedirectTo|인증 메일/);
