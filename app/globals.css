@@ -172,8 +172,16 @@ button, input, select { font: inherit; }
 .match-admin-actions details[open] summary { width: fit-content; margin-left: auto; }
 .match-edit-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(140px, .7fr) auto; gap: 10px; align-items: end; margin-top: 12px; }
 .match-edit-form .button { min-height: 42px; }
-.match-edit-form .picker-heading, .match-edit-form .participant-picker, .match-edit-actions { grid-column: 1 / -1; }
+.match-edit-form .picker-heading, .match-edit-form .participant-picker, .match-edit-actions, .team-player-replacement { grid-column: 1 / -1; }
 .match-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.team-player-replacement { min-width: 0; margin: 4px 0 0; padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+.team-player-replacement legend { padding: 0 6px; color: var(--text); font-size: 12px; font-weight: 800; }
+.team-player-replacement > p { margin: 0 0 10px; color: var(--muted); font-size: 10px; }
+.team-player-replacement > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.team-player-replacement section { display: grid; gap: 7px; }
+.team-player-replacement section > strong { color: var(--accent); font-size: 11px; }
+.team-player-replacement label { display: grid; grid-template-columns: 20px 1fr; gap: 7px; align-items: center; color: var(--muted); font-size: 10px; }
+.team-player-replacement select { min-width: 0; width: 100%; height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: #0e1116; color: var(--text); }
 .result-entry-panel { margin-bottom: 34px; }
 .result-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 18px; }
 .result-section-heading h2 { margin: 6px 0 0; font-size: 24px; }
@@ -314,6 +322,7 @@ button, input, select { font: inherit; }
   .result-form .button { grid-column: auto; }
   .match-edit-form { grid-template-columns: 1fr; }
   .match-edit-actions { display: grid; }
+  .team-player-replacement > div { grid-template-columns: 1fr; }
   .match-admin-actions details[open] summary { margin-left: 0; }
   .delete-action form { display: grid; justify-content: stretch; }
   .participant-option { grid-template-columns: minmax(0,1fr) 92px; }

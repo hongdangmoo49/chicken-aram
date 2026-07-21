@@ -1,4 +1,4 @@
-import { getMatchParticipants, getMatches, getPlayers } from "../../db/site-data";
+import { getMatchParticipants, getMatches, getPlayers, type MatchParticipant, type Player } from "../../db/site-data";
 import { getCurrentUser } from "../auth";
 import { isAdmin } from "../roles";
 import { MatchCard, PageShell } from "../ui";
@@ -10,6 +10,15 @@ const maps = ["증강 칼바람 협곡", "칼바람 나락"];
 
 function localDateTime(value: string) {
   return new Intl.DateTimeFormat("sv-SE", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" }).format(new Date(value)).replace(" ", "T");
+}
+
+function TeamPlayerFields({ matchId, members, players }: { matchId: number; members: MatchParticipant[]; players: Player[] }) {
+  return <fieldset className="team-player-replacement"><legend>팀 선수 교체</legend><p>각 자리를 변경해도 나머지 선수와 팀은 그대로 유지됩니다.</p><div>
+    {(["A", "B"] as const).map((team) => <section key={team}><strong>{team}팀</strong>{members.filter((member) => member.team === team).map((member, index) => {
+      const id = `team-${matchId}-${team}-${index}`;
+      return <label htmlFor={id} key={member.playerId}><span>{index + 1}</span><select defaultValue={member.playerId} id={id} name={`team${team}Players`}>{players.map((player) => <option key={player.id} value={player.id}>{player.nickname} · T{player.tier}</option>)}</select></label>;
+    })}</section>)}
+  </div></fieldset>;
 }
 
 export default async function SchedulePage() {
@@ -25,11 +34,12 @@ export default async function SchedulePage() {
         return <div className={`scheduled-match${admin ? " manageable" : ""}`} key={match.id}>
         <MatchCard match={match} />
         {admin && <div className="match-admin-actions">
-          <details><summary>수정 · 팀 재편성</summary><form action={`/api/schedule/${match.id}`} className="match-edit-form" method="post">
+          <details><summary>수정 · 선수 교체 · 팀 재편성</summary><form action={`/api/schedule/${match.id}`} className="match-edit-form" method="post">
             <div className="field"><label htmlFor={`scheduledAt-${match.id}`}>일시</label><input id={`scheduledAt-${match.id}`} name="scheduledAt" type="datetime-local" defaultValue={localDateTime(match.scheduledAt)} required /></div>
             <div className="field"><label htmlFor={`map-${match.id}`}>맵</label><select id={`map-${match.id}`} name="map" defaultValue={match.map}>{maps.map((map) => <option key={map}>{map}</option>)}</select></div>
+            <TeamPlayerFields matchId={match.id} members={matchMembers} players={players} />
             <ParticipantPicker initialGroups={initialGroups} initialSelectedIds={matchMembers.map((member) => member.playerId)} players={players} />
-            <div className="match-edit-actions"><button className="button ghost" name="action" type="submit" value="update">일정만 저장</button><button className="button primary" name="action" type="submit" value="rebalance">팀 재편성</button></div>
+            <div className="match-edit-actions"><button className="button ghost" name="action" type="submit" value="update">일정만 저장</button><button className="button ghost" name="action" type="submit" value="replacePlayers">선수 교체 저장</button><button className="button primary" name="action" type="submit" value="rebalance">팀 재편성</button></div>
           </form></details>
           <details className="delete-action"><summary>삭제</summary><form action={`/api/schedule/${match.id}`} method="post"><input name="action" type="hidden" value="delete" /><p>삭제하면 복구할 수 없습니다.</p><button className="button danger" type="submit">삭제 확정</button></form></details>
         </div>}

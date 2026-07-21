@@ -67,6 +67,9 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(scheduleMutation, /action === "delete"/);
   assert.match(scheduleMutation, /scheduledAt\}\+09:00/);
   assert.match(scheduleMutation, /rebalanceScheduledMatch/);
+  assert.match(scheduleMutation, /replaceScheduledMatchPlayers/);
+  assert.match(scheduleMutation, /normalizeTeamPlayers/);
+  assert.match(scheduleMutation, /팀 선수를 교체했습니다/);
   assert.match(siteData, /rpc\("rebalance_scheduled_match"/);
   assert.match(rebalanceMigration, /delete from public\.match_players/);
   assert.match(rebalanceMigration, /current_status <> 'scheduled'/);

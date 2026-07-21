@@ -1,4 +1,5 @@
-import { deleteScheduledMatch, rebalanceScheduledMatch, updateScheduledMatch } from "../../../../db/site-data";
+import { deleteScheduledMatch, rebalanceScheduledMatch, replaceScheduledMatchPlayers, updateScheduledMatch } from "../../../../db/site-data";
+import { normalizeTeamPlayers } from "../../../../lib/team-players";
 import { redirectWithToast } from "../../../../lib/toast-response";
 import { getCurrentUser } from "../../../auth";
 import { isAdmin } from "../../../roles";
@@ -23,10 +24,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const scheduledAt = String(form.get("scheduledAt") ?? "").trim();
     const map = String(form.get("map") ?? "").trim();
-    if ((action !== "update" && action !== "rebalance") || !scheduledAt || Number.isNaN(Date.parse(scheduledAt)) || !maps.has(map)) {
+    if ((action !== "update" && action !== "rebalance" && action !== "replacePlayers") || !scheduledAt || Number.isNaN(Date.parse(scheduledAt)) || !maps.has(map)) {
       return redirectWithToast(request, "/schedule", "error", "수정할 일시와 맵을 확인해 주세요.");
     }
     const scheduledAtIso = new Date(`${scheduledAt}+09:00`).toISOString();
+    if (action === "replacePlayers") {
+      const teams = normalizeTeamPlayers(form.getAll("teamAPlayers"), form.getAll("teamBPlayers"));
+      if (!teams) return redirectWithToast(request, "/schedule", "error", "A팀과 B팀에 중복 없이 5명씩 선택해 주세요.");
+      await replaceScheduledMatchPlayers({ id, scheduledAt: scheduledAtIso, map, ...teams });
+      return redirectWithToast(request, "/schedule", "success", "팀 선수를 교체했습니다.");
+    }
     if (action === "rebalance") {
       const playerIds = [...new Set(form.getAll("players").map(Number).filter(Number.isInteger))];
       if (playerIds.length !== 10) return redirectWithToast(request, "/schedule", "error", "팀 재편성에 참가할 선수 10명을 선택해 주세요.");
