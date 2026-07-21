@@ -191,6 +191,7 @@ button, input, select { font: inherit; }
 .field label { color: var(--muted); font-size: 11px; font-weight: 700; }
 .field input, .field select { width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; outline: none; background: #0e1116; color: var(--text); }
 .field input:focus, .field select:focus { border-color: var(--accent); }
+.field input[type="datetime-local"] { color-scheme: dark; cursor: pointer; }
 .form-grid .button { margin-top: 4px; border: 0; }
 .picker-heading { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-top: 6px; }
 .picker-heading strong { font-size: 12px; }

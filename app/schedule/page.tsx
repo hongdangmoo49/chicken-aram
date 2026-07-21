@@ -33,7 +33,7 @@ export default async function SchedulePage() {
       <aside className="admin-panel team-builder">
         <h2>새 대전 · 팀 나누기</h2><p>관리자 전용 · 정확히 10명을 선택하세요.</p>
         {admin ? <form action="/api/schedule" className="form-grid" method="post">
-          <div className="field"><label htmlFor="scheduledAt">일시</label><input id="scheduledAt" name="scheduledAt" type="datetime-local" required /></div>
+          <div className="field"><label htmlFor="scheduledAt">일시</label><input defaultValue={localDateTime(new Date().toISOString())} id="scheduledAt" name="scheduledAt" type="datetime-local" required /></div>
           <div className="field"><label htmlFor="map">맵</label><select id="map" name="map">{maps.map((map) => <option key={map}>{map}</option>)}</select></div>
           <div className="picker-heading"><strong>참가 선수</strong><span>분리 그룹은 같은 숫자끼리 다른 팀으로 배치</span></div>
           <div className="participant-picker">
