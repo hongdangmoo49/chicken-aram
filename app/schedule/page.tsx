@@ -1,7 +1,8 @@
 import { getMatches, getPlayers } from "../../db/site-data";
 import { getCurrentUser } from "../auth";
 import { isAdmin } from "../roles";
-import { MatchCard, PageShell, PlayerAvatar } from "../ui";
+import { MatchCard, PageShell } from "../ui";
+import { ParticipantPicker } from "./participant-picker";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "대전 예정" };
@@ -35,13 +36,7 @@ export default async function SchedulePage() {
         {admin ? <form action="/api/schedule" className="form-grid" method="post">
           <div className="field"><label htmlFor="scheduledAt">일시</label><input defaultValue={localDateTime(new Date().toISOString())} id="scheduledAt" name="scheduledAt" type="datetime-local" required /></div>
           <div className="field"><label htmlFor="map">맵</label><select id="map" name="map">{maps.map((map) => <option key={map}>{map}</option>)}</select></div>
-          <div className="picker-heading"><strong>참가 선수</strong><span>분리 그룹은 같은 숫자끼리 다른 팀으로 배치</span></div>
-          <div className="participant-picker">
-            {players.map((player) => <div className="participant-option" key={player.id}>
-              <label htmlFor={`player-${player.id}`}><input id={`player-${player.id}`} name="players" type="checkbox" value={player.id} /><PlayerAvatar player={player} /><span><strong>{player.nickname}</strong><small>T{player.tier} · {player.wins}승 {player.losses}패</small></span></label>
-              <select name={`group_${player.id}`} aria-label={`${player.nickname} 분리 그룹`} defaultValue=""><option value="">분리 없음</option>{[1,2,3,4,5].map((group) => <option value={group} key={group}>그룹 {group}</option>)}</select>
-            </div>)}
-          </div>
+          <ParticipantPicker players={players} />
           <button className="button primary" type="submit">팀 나누기 · 일정 생성</button>
         </form> : <div className="permission-note"><strong>{user ? "일반 계정으로 로그인됨" : "로그인이 필요합니다"}</strong>{user ? "팀 나누기 권한은 관리자 계정에만 제공됩니다." : "로그인 후 계정 권한에 따라 관리 기능이 표시됩니다."}</div>}
       </aside>
