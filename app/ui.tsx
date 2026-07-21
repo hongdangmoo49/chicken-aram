@@ -46,14 +46,15 @@ export function PlayerRow({ player, rank, winRate }: { player: Player; rank: num
 
 export function MatchCard({ match, featured = false, compact = false }: { match: Match; featured?: boolean; compact?: boolean }) {
   const completed = match.status === "completed";
+  const winner = match.winner ?? (completed && match.redScore !== null && match.blueScore !== null ? match.redScore > match.blueScore ? "A" : "B" : null);
   const date = new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" }).format(new Date(match.scheduledAt));
   return (
     <article className={`match-card${featured ? " featured" : ""}${compact ? " compact" : ""}`}>
       <div className="match-meta"><span>{date}</span><span>{match.map}</span></div>
       <div className="match-teams">
-        <div className="team red"><small>A TEAM</small><strong>A팀</strong><span className="team-members">{match.teamRed}</span></div>
+        <div className={`team red${winner === "A" ? " winner" : ""}`}><small>A TEAM{winner === "A" ? " · WIN" : ""}</small><strong>A팀</strong><span className="team-members">{match.teamRed}</span></div>
         <div className="versus">{completed ? <span className="score">{match.redScore}:{match.blueScore}</span> : "VS"}</div>
-        <div className="team blue"><small>B TEAM</small><strong>B팀</strong><span className="team-members">{match.teamBlue}</span></div>
+        <div className={`team blue${winner === "B" ? " winner" : ""}`}><small>B TEAM{winner === "B" ? " · WIN" : ""}</small><strong>B팀</strong><span className="team-members">{match.teamBlue}</span></div>
       </div>
       {!compact && <div className="match-footer"><span className="status">{completed ? "경기 종료" : "팀 배정 완료"}</span><span>{completed && match.mvp ? `MVP · ${match.mvp}` : "5 vs 5 · BO1"}</span></div>}
     </article>

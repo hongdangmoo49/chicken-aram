@@ -81,6 +81,7 @@ button, input, select { font: inherit; }
 .team-members { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .team.red strong { color: #ff8b8e; }
 .team.blue strong { color: #8ab1ff; }
+.team.winner small { color: var(--green); }
 .versus { min-width: 52px; text-align: center; color: var(--muted); font: 800 13px/1 ui-monospace, monospace; }
 .score { color: var(--text); font-size: 28px; letter-spacing: -.04em; }
 .featured .team strong { font-size: 23px; }
@@ -162,7 +163,7 @@ button, input, select { font: inherit; }
 
 .match-list { display: grid; gap: 12px; }
 .match-list .match-card { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); }
-.scheduled-match.manageable .match-card { border-radius: 13px 13px 0 0; }
+.manageable .match-card { border-radius: 13px 13px 0 0; }
 .match-admin-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 13px 13px; background: var(--surface-raised); }
 .match-admin-actions details { min-width: 70px; }
 .match-admin-actions summary { padding: 7px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: 12px; font-weight: 700; text-align: center; cursor: pointer; list-style: none; }
@@ -171,6 +172,13 @@ button, input, select { font: inherit; }
 .match-admin-actions details[open] summary { width: fit-content; margin-left: auto; }
 .match-edit-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(140px, .7fr) auto; gap: 10px; align-items: end; margin-top: 12px; }
 .match-edit-form .button { min-height: 42px; }
+.result-entry-panel { margin-bottom: 34px; }
+.result-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 18px; }
+.result-section-heading h2 { margin: 6px 0 0; font-size: 24px; }
+.result-section-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+.archive-heading { margin-top: 12px; }
+.result-form { display: grid; grid-template-columns: minmax(190px, 1.2fr) repeat(3, minmax(100px, .55fr)) minmax(150px, .8fr) auto; gap: 10px; align-items: end; margin-top: 12px; }
+.result-form .button { min-height: 42px; }
 .delete-action form { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; }
 .delete-action p { margin: 0; color: var(--muted); font-size: 12px; }
 .button.danger { border-color: #7d3434; background: #451f1f; color: #ffb0a8; }
@@ -264,6 +272,8 @@ button, input, select { font: inherit; }
   .auth-grid { grid-template-columns: 1fr; }
   .admin-panel { position: static; }
   .page-intro { display: grid; }
+  .result-form { grid-template-columns: 1fr 1fr; }
+  .result-form .button { grid-column: 1 / -1; }
 }
 
 @media (max-width: 640px) {
@@ -295,6 +305,9 @@ button, input, select { font: inherit; }
   .tier-player-card { grid-template-columns: 52px minmax(0, 1fr) auto; padding: 14px; }
   .tier-player-card .avatar { width: 52px; height: 52px; }
   .match-admin-actions { display: grid; }
+  .result-section-heading { display: grid; }
+  .result-form { grid-template-columns: 1fr; }
+  .result-form .button { grid-column: auto; }
   .match-edit-form { grid-template-columns: 1fr; }
   .match-admin-actions details[open] summary { margin-left: 0; }
   .delete-action form { display: grid; justify-content: stretch; }

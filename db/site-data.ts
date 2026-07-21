@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-positions";
 import type { PlayerTierChange } from "../lib/player-tiers";
+import type { MatchResultInput, MatchWinner } from "../lib/match-results";
 import { balanceTeams } from "./team-balance";
 
 export type Player = {
@@ -25,7 +26,15 @@ export type Match = {
   redScore: number | null;
   blueScore: number | null;
   mvp: string | null;
+  mvpPlayerId: number | null;
+  winner: MatchWinner | null;
   createdBy: string | null;
+};
+
+export type MatchParticipant = {
+  matchId: number;
+  playerId: number;
+  team: MatchWinner;
 };
 
 export type PlayerProfile = Player;
@@ -67,13 +76,13 @@ export async function getMatches(): Promise<Match[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("matches")
-    .select("id,scheduled_at,map,status,team_a,team_b,a_score,b_score,mvp,created_by")
+    .select("id,scheduled_at,played_at,map,status,team_a,team_b,a_score,b_score,mvp,mvp_player_id,winner,created_by")
     .order("scheduled_at", { ascending: false });
   if (error) fail("대전 목록 조회 실패", error);
 
   return (data ?? []).map((match) => ({
     id: Number(match.id),
-    scheduledAt: match.scheduled_at,
+    scheduledAt: match.played_at ?? match.scheduled_at,
     map: match.map,
     status: match.status,
     teamRed: match.team_a.join(", "),
@@ -81,8 +90,17 @@ export async function getMatches(): Promise<Match[]> {
     redScore: match.a_score,
     blueScore: match.b_score,
     mvp: match.mvp,
+    mvpPlayerId: match.mvp_player_id === null ? null : Number(match.mvp_player_id),
+    winner: match.winner as MatchWinner | null,
     createdBy: match.created_by,
   }));
+}
+
+export async function getMatchParticipants(): Promise<MatchParticipant[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team");
+  if (error) fail("대전 참가자 조회 실패", error);
+  return (data ?? []).map((member) => ({ matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner }));
 }
 
 export async function createBalancedSchedule(input: {
@@ -219,4 +237,17 @@ export async function setPlayerTiers(changes: PlayerTierChange[]) {
   const admin = createSupabaseAdminClient();
   const { error } = await admin.rpc("set_player_tiers", { changes });
   if (error) fail("선수 티어 저장 실패", error);
+}
+
+export async function saveMatchResult(input: MatchResultInput & { matchId: number }) {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.rpc("save_match_result", {
+    p_match_id: input.matchId,
+    p_played_at: input.playedAt,
+    p_a_score: input.aScore,
+    p_b_score: input.bScore,
+    p_winner: input.winner,
+    p_mvp_player_id: input.mvpPlayerId,
+  });
+  if (error) fail("대전 결과 저장 실패", error);
 }
