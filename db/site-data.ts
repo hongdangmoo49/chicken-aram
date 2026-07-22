@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "../lib/supabase/server";
 import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-positions";
 import type { PlayerTierChange } from "../lib/player-tiers";
 import type { MatchResultInput, MatchWinner } from "../lib/match-results";
+import { calculateRoundRecord } from "../lib/player-records";
 import { balanceTeams } from "./team-balance";
 
 export type Player = {
@@ -38,7 +39,7 @@ export type MatchParticipant = {
   separatedGroup: number | null;
 };
 
-export type PlayerProfile = Player;
+export type PlayerProfile = Player & { roundWins: number; roundLosses: number };
 
 function fail(operation: string, error: { message: string } | null): never {
   throw new Error(`${operation}: ${error?.message ?? "unknown Supabase error"}`);
@@ -216,6 +217,16 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
     .eq("id", profile.player_id)
     .single();
   if (playerError || !player) fail("선수 프로필 조회 실패", playerError);
+  const { data: roundResults, error: roundError } = await admin
+    .from("match_players")
+    .select("team,matches!inner(a_score,b_score,status)")
+    .eq("player_id", player.id)
+    .eq("matches.status", "completed");
+  if (roundError) fail("라운드 전적 조회 실패", roundError);
+  const roundRecord = calculateRoundRecord((roundResults ?? []).map((result) => {
+    const match = result.matches as unknown as { a_score: number; b_score: number };
+    return { team: result.team as MatchWinner, aScore: Number(match.a_score), bScore: Number(match.b_score) };
+  }));
   return {
     id: Number(player.id),
     nickname: player.nickname,
@@ -225,6 +236,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
     thumbnailKey: player.thumbnail_path,
     positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
     tierOrder: player.tier_order,
+    ...roundRecord,
   };
 }
 
