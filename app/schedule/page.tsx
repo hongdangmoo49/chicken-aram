@@ -1,4 +1,5 @@
 import { getMatchParticipants, getMatches, getPlayers, type MatchParticipant, type Player } from "../../db/site-data";
+import { playerTierLabel } from "../../lib/player-tiers";
 import { getCurrentUser } from "../auth";
 import { isAdmin } from "../roles";
 import { MatchCard, PageShell } from "../ui";
@@ -16,7 +17,7 @@ function TeamPlayerFields({ matchId, members, players }: { matchId: number; memb
   return <fieldset className="team-player-replacement"><legend>팀 선수 교체</legend><p>각 자리를 변경해도 나머지 선수와 팀은 그대로 유지됩니다.</p><div>
     {(["A", "B"] as const).map((team) => <section key={team}><strong>{team}팀</strong>{members.filter((member) => member.team === team).map((member, index) => {
       const id = `team-${matchId}-${team}-${index}`;
-      return <label htmlFor={id} key={member.playerId}><span>{index + 1}</span><select defaultValue={member.playerId} id={id} name={`team${team}Players`}>{players.map((player) => <option key={player.id} value={player.id}>{player.nickname} · T{player.tier}</option>)}</select></label>;
+      return <label htmlFor={id} key={member.playerId}><span>{index + 1}</span><select defaultValue={member.playerId} id={id} name={`team${team}Players`}>{players.map((player) => <option key={player.id} value={player.id}>{player.nickname} · {playerTierLabel(player.tier)}</option>)}</select></label>;
     })}</section>)}
   </div></fieldset>;
 }

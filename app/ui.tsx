@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Match, Player } from "../db/site-data";
+import { playerTierLabel } from "../lib/player-tiers";
 import { getCurrentUser } from "./auth";
 import { signOut } from "./auth/actions";
 import { PlayerAvatar, PlayerPositions } from "./player-ui";
@@ -41,7 +42,7 @@ export function SectionHeading({ kicker, title, href }: { kicker: string; title:
 }
 
 export function PlayerRow({ player, rank, winRate }: { player: Player; rank: number; winRate: number }) {
-  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="player-tags"><span className="tier-pill">T{player.tier}</span><PlayerPositions positions={player.positions} /></span><span className="win-rate">{winRate}%</span></div>;
+  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="player-tags"><span className="tier-pill">{playerTierLabel(player.tier)}</span><PlayerPositions positions={player.positions} /></span><span className="win-rate">{winRate}%</span></div>;
 }
 
 export function MatchCard({ match, featured = false, compact = false }: { match: Match; featured?: boolean; compact?: boolean }) {

@@ -2,17 +2,17 @@
 
 import { useMemo, useState, type DragEvent } from "react";
 import type { Player } from "../../db/site-data";
+import { playerTierLabel, playerTiers } from "../../lib/player-tiers";
 import { PlayerAvatar, PlayerPositions } from "../player-ui";
 
-const tiers = [1, 2, 3, 4] as const;
 type Arrangement = Record<number, number[]>;
 
 function arrange(players: Player[]): Arrangement {
-  return Object.fromEntries(tiers.map((tier) => [tier, players.filter((player) => player.tier === tier).map((player) => player.id)]));
+  return Object.fromEntries(playerTiers.map((tier) => [tier, players.filter((player) => player.tier === tier).map((player) => player.id)]));
 }
 
 function placement(arrangement: Arrangement, playerId: number) {
-  for (const tier of tiers) {
+  for (const tier of playerTiers) {
     const order = arrangement[tier].indexOf(playerId);
     if (order >= 0) return { tier, order };
   }
@@ -28,7 +28,7 @@ export function TierDragBoard({ players, admin }: { players: Player[]; admin: bo
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const rate = (player: Player) => player.wins + player.losses === 0 ? 0 : Math.round((player.wins / (player.wins + player.losses)) * 100);
-  const changes = tiers.flatMap((tier) => arrangement[tier].map((playerId, order) => ({ playerId, tier, order })));
+  const changes = playerTiers.flatMap((tier) => arrangement[tier].map((playerId, order) => ({ playerId, tier, order })));
   const pendingCount = changes.filter((change) => {
     const original = placement(baseline, change.playerId);
     return !original || original.tier !== change.tier || original.order !== change.order;
@@ -43,14 +43,14 @@ export function TierDragBoard({ players, admin }: { players: Player[]; admin: bo
   function movePlayer(playerId: number, tier: number, targetId?: number, after = false) {
     if (playerId === targetId) return clearDrag();
     setArrangement((current) => {
-      const next = Object.fromEntries(tiers.map((value) => [value, current[value].filter((id) => id !== playerId)])) as Arrangement;
+      const next = Object.fromEntries(playerTiers.map((value) => [value, current[value].filter((id) => id !== playerId)])) as Arrangement;
       const target = next[tier];
       const targetIndex = targetId ? target.indexOf(targetId) : -1;
       target.splice(targetIndex < 0 ? target.length : targetIndex + (after ? 1 : 0), 0, playerId);
       return next;
     });
     const player = players.find((item) => item.id === playerId);
-    setMessage(`${player?.nickname ?? "선수"}의 T${tier} 내 위치를 임시 변경했습니다.`);
+    setMessage(`${player?.nickname ?? "선수"}의 ${playerTierLabel(tier)} 내 위치를 임시 변경했습니다.`);
     clearDrag();
   }
 
@@ -99,13 +99,13 @@ export function TierDragBoard({ players, admin }: { players: Player[]; admin: bo
   return <div className="tier-drag-board" data-over-tier={overTier ?? undefined}>
     {admin && <div className="tier-save-bar"><span><strong>{pendingCount}</strong>명 순서 변경 대기</span><div><button className="button ghost" disabled={!pendingCount || saving} onClick={() => { setArrangement(baseline); setMessage("변경사항을 초기화했습니다."); }} type="button">초기화</button><button className="button primary" disabled={!pendingCount || saving} onClick={saveChanges} type="button">{saving ? "저장 중..." : "변경사항 저장"}</button></div></div>}
     <div className="tier-board">
-      {tiers.map((tier) => {
+      {playerTiers.map((tier) => {
         const tierPlayers = arrangement[tier].map((id) => players.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
-        return <section className={`tier-section tier-${tier}`} data-tier={tier} key={tier} onDragOver={(event) => handleDragOver(event, tier)} onDrop={(event) => handleDrop(event, tier)}><div className="tier-label"><div><strong>T{tier}</strong><span>{tierPlayers.length} PLAYERS</span></div></div><div className="tier-players">{tierPlayers.map((player) => <article className={`tier-player-card${draggingId === player.id ? " dragging" : ""}${dropTarget?.playerId === player.id ? dropTarget.after ? " drop-after" : " drop-before" : ""}`} data-player-id={player.id} draggable={admin} key={player.id} onDragEnd={clearDrag} onDragStart={(event) => handleDragStart(event, player)} title={admin ? "원하는 티어와 순서로 드래그" : undefined}>
+        return <section className={`tier-section tier-${tier}`} data-tier={tier} key={tier} onDragOver={(event) => handleDragOver(event, tier)} onDrop={(event) => handleDrop(event, tier)}><div className="tier-label"><div><strong>{playerTierLabel(tier)}</strong><span>{tierPlayers.length} PLAYERS</span></div></div><div className="tier-players">{tierPlayers.map((player) => <article className={`tier-player-card${draggingId === player.id ? " dragging" : ""}${dropTarget?.playerId === player.id ? dropTarget.after ? " drop-after" : " drop-before" : ""}`} data-player-id={player.id} draggable={admin} key={player.id} onDragEnd={clearDrag} onDragStart={(event) => handleDragStart(event, player)} title={admin ? "원하는 티어와 순서로 드래그" : undefined}>
           <PlayerAvatar player={player} />
           <div className="tier-player-info"><strong>{player.nickname}</strong><span>{player.wins}승 {player.losses}패</span><PlayerPositions positions={player.positions} /></div>
           <div className="tier-player-rate"><strong>{rate(player)}%</strong><span>승률</span></div>
-          {admin && <div className="tier-admin-form"><label htmlFor={`tier-${player.id}`}>티어 조정</label><select disabled={saving} id={`tier-${player.id}`} value={tier} onChange={(event) => movePlayer(player.id, Number(event.target.value))}>{tiers.map((value) => <option value={value} key={value}>T{value}</option>)}</select></div>}
+          {admin && <div className="tier-admin-form"><label htmlFor={`tier-${player.id}`}>티어 조정</label><select disabled={saving} id={`tier-${player.id}`} value={tier} onChange={(event) => movePlayer(player.id, Number(event.target.value))}>{playerTiers.map((value) => <option value={value} key={value}>{playerTierLabel(value)}</option>)}</select></div>}
         </article>)}</div></section>;
       })}
     </div>

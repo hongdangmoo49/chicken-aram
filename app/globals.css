@@ -113,6 +113,7 @@ button, input, select { font: inherit; }
 .tier-badge-2 { border-color: #c9a85f; background: linear-gradient(135deg, #604815, #d7b763 55%, #6f5520); color: #fff4c9; box-shadow: 0 4px 12px rgba(190,148,53,.18); }
 .tier-badge-3 { border-color: #64758d; background: linear-gradient(135deg, #263345, #7d91aa); color: #e7effa; }
 .tier-badge-4 { border-color: #3b414c; background: #20242b; color: #aeb5c0; }
+.tier-badge-5 { border-color: #42615a; background: #182823; color: #9fd0bd; }
 .player-tags, .profile-tags, .position-list { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px; }
 .position-chip { padding: 3px 7px; border: 1px solid #60432f; border-radius: 999px; background: rgba(255, 125, 42, .08); color: #ffad72; font-size: 10px; font-weight: 750; white-space: nowrap; }
 .win-rate { min-width: 42px; text-align: right; font: 700 12px/1 ui-monospace, monospace; }
@@ -135,7 +136,7 @@ button, input, select { font: inherit; }
 .tier-save-bar .button, .member-save-bar .button { min-height: 36px; padding: 8px 12px; }
 .tier-save-bar .button:disabled, .member-save-bar .button:disabled { opacity: .4; cursor: not-allowed; }
 .tier-section { display: grid; grid-template-columns: 120px 1fr; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
-.tier-drag-board[data-over-tier="1"] .tier-section[data-tier="1"], .tier-drag-board[data-over-tier="2"] .tier-section[data-tier="2"], .tier-drag-board[data-over-tier="3"] .tier-section[data-tier="3"], .tier-drag-board[data-over-tier="4"] .tier-section[data-tier="4"] { border-color: var(--accent); background: rgba(255,125,42,.06); box-shadow: 0 0 0 2px rgba(255,125,42,.16), 0 12px 35px rgba(0,0,0,.25); }
+.tier-drag-board[data-over-tier="1"] .tier-section[data-tier="1"], .tier-drag-board[data-over-tier="2"] .tier-section[data-tier="2"], .tier-drag-board[data-over-tier="3"] .tier-section[data-tier="3"], .tier-drag-board[data-over-tier="4"] .tier-section[data-tier="4"], .tier-drag-board[data-over-tier="5"] .tier-section[data-tier="5"] { border-color: var(--accent); background: rgba(255,125,42,.06); box-shadow: 0 0 0 2px rgba(255,125,42,.16), 0 12px 35px rgba(0,0,0,.25); }
 .tier-label { display: grid; place-items: center; min-height: 160px; border-right: 1px solid var(--line); background: var(--surface-raised); }
 .tier-label strong { font: 800 42px/1 ui-monospace, monospace; }
 .tier-label span { color: var(--muted); font-size: 11px; }
@@ -143,6 +144,7 @@ button, input, select { font: inherit; }
 .tier-2 .tier-label strong { color: #e9d4a5; }
 .tier-3 .tier-label strong { color: #9ba7b8; }
 .tier-4 .tier-label strong { color: #a77b61; }
+.tier-5 .tier-label strong { color: #82b6a2; font-family: inherit; font-size: 30px; }
 .tier-players { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); grid-auto-rows: minmax(124px, auto); gap: 10px; padding: 18px; }
 .tier-player-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: center; height: 100%; padding: 18px; border: 1px solid var(--line); border-radius: 11px; background: #0e1116; }
 .tier-player-card[draggable="true"] { cursor: grab; transition: opacity .15s ease, transform .15s ease, border-color .15s ease; }
