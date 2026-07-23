@@ -253,6 +253,17 @@ button, input, select { font: inherit; }
 .role-badge { padding: 7px 10px; border: 1px solid #9f5626; border-radius: 999px; color: var(--accent); font-size: 11px; font-weight: 800; }
 .permission-note { padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 13px; }
 .permission-note strong { display: block; margin-bottom: 4px; color: var(--text); }
+.admin-subnav { display: flex; justify-content: flex-end; margin: -18px 0 18px; }
+.admin-subnav .button { min-height: 36px; padding: 8px 12px; }
+.audit-list { display: grid; gap: 12px; }
+.audit-entry { padding: 20px; }
+.audit-entry > header { display: flex; justify-content: space-between; gap: 16px; }
+.audit-entry > header div { display: flex; gap: 8px; align-items: center; }
+.audit-entry > header span, .audit-entry time, .audit-entry > p { color: var(--muted); font-size: 11px; }
+.audit-entry > p { margin: 10px 0; }
+.audit-entry > p strong { color: var(--text); }
+.audit-entry summary { color: var(--accent); font-size: 12px; cursor: pointer; }
+.audit-entry pre { max-height: 340px; overflow: auto; margin: 12px 0 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #0e1116; color: var(--muted); font-size: 11px; }
 
 .auth-page { width: min(960px, calc(100% - 40px)); min-height: 100vh; margin: 0 auto; padding: 42px 0 80px; }
 .auth-brand { width: fit-content; }
@@ -297,6 +308,7 @@ button, input, select { font: inherit; }
   .site-header { padding: 0 20px; }
   .account-copy { display: none; }
   .member-heading { display: grid; }
+  .audit-entry > header { display: grid; }
   .member-row { grid-template-columns: 1fr; padding: 14px 0; }
   .member-row select { width: 100%; }
   .page-wrap { width: min(100% - 32px, 760px); padding-top: 44px; }

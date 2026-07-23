@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { withToast } from "../../../lib/toast";
 import { requireCurrentUser } from "../../auth";
@@ -18,6 +19,7 @@ export default async function MembersPage() {
 
   return <PageShell active="admin">
     <header className="page-intro"><div><span className="eyebrow">MEMBER ACCESS</span><h1>멤버 관리</h1></div><p>{canManageRoles ? "일반 사용자를 관리자로 임명하거나 다시 일반 사용자로 변경할 수 있습니다." : "가입한 멤버와 현재 권한을 확인할 수 있습니다. 권한 변경은 슈퍼 관리자만 할 수 있습니다."}</p></header>
+    <nav className="admin-subnav"><Link className="button ghost" href="/admin/audit">변경 기록</Link></nav>
     <section className="member-panel panel">
       <div className="member-heading"><div><span className="eyebrow">ACCESS LEVEL</span><h2>멤버 권한 관리</h2></div><p>슈퍼 관리자 · 관리자 · 일반 사용자 권한을 구분해 표시합니다.</p></div>
       <MemberRoleEditor canManageRoles={canManageRoles} members={members} />

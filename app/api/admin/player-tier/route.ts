@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   if (!changes) return redirectWithToast(request, "/tiers", "error", "변경할 선수와 티어를 확인해 주세요.");
 
   try {
-    await setPlayerTiers(changes);
+    await setPlayerTiers(changes, user.id);
   } catch {
     return redirectWithToast(request, "/tiers", "error", "선수 티어를 일괄 변경하지 못했습니다.");
   }

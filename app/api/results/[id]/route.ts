@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!Number.isInteger(matchId) || matchId < 1 || !result) return redirectWithToast(request, "/results", "error", "점수, 승리팀, MVP와 경기 일시를 확인해 주세요.");
 
   try {
-    await saveMatchResult({ matchId, ...result });
+    await saveMatchResult({ matchId, actorId: user.id, ...result });
   } catch (error) {
     const errorId = reportError("result.save", error, { matchId });
     return redirectWithToast(request, "/results", "error", `대전 결과를 저장하지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);

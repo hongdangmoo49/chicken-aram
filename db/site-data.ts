@@ -302,14 +302,14 @@ export async function setPlayerPositions(playerId: number, positions: PlayerPosi
   expirePublicCache(PLAYERS_CACHE_TAG);
 }
 
-export async function setPlayerTiers(changes: PlayerTierChange[]) {
+export async function setPlayerTiers(changes: PlayerTierChange[], actorId: string) {
   const admin = createSupabaseAdminClient();
-  const { error } = await admin.rpc("set_player_tiers", { changes });
+  const { error } = await admin.rpc("set_player_tiers", { changes, p_actor_id: actorId });
   if (error) fail("선수 티어 저장 실패", error);
   expirePublicCache(PLAYERS_CACHE_TAG);
 }
 
-export async function saveMatchResult(input: MatchResultInput & { matchId: number }) {
+export async function saveMatchResult(input: MatchResultInput & { matchId: number; actorId: string }) {
   const admin = createSupabaseAdminClient();
   const { error } = await admin.rpc("save_match_result", {
     p_match_id: input.matchId,
@@ -318,6 +318,7 @@ export async function saveMatchResult(input: MatchResultInput & { matchId: numbe
     p_b_score: input.bScore,
     p_winner: input.winner,
     p_mvp_player_id: input.mvpPlayerId,
+    p_actor_id: input.actorId,
   });
   if (error) fail("대전 결과 저장 실패", error);
   expirePublicCache(MATCHES_CACHE_TAG, PLAYERS_CACHE_TAG);

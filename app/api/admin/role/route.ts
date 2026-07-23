@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   if (!changes) return redirectWithToast(request, "/admin/members", "error", "변경할 멤버와 권한을 확인해 주세요.");
 
   try {
-    await setMemberRoles(changes);
+    await setMemberRoles(changes, user.id);
   } catch {
     return redirectWithToast(request, "/admin/members", "error", "멤버 권한을 일괄 변경하지 못했습니다.");
   }

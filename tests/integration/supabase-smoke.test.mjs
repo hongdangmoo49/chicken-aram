@@ -96,6 +96,26 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ?
     assert.equal(Array.isArray(profile.data.players), false);
     playerId = profile.data.player_id;
 
+    const promoted = await admin.rpc("set_member_roles", {
+      changes: [{ userId, role: "admin" }],
+      p_actor_id: userId,
+    });
+    assert.ifError(promoted.error);
+    const audit = await admin
+      .from("audit_logs")
+      .select("actor_id,actor_name,action,before_data,after_data")
+      .eq("actor_id", userId)
+      .eq("action", "members.role.update")
+      .single();
+    assert.ifError(audit.error);
+    assert.equal(audit.data.actor_name, nickname);
+    assert.equal(audit.data.before_data[0].role, "user");
+    assert.equal(audit.data.after_data[0].role, "admin");
+    assert.ifError((await admin.rpc("set_member_roles", {
+      changes: [{ userId, role: "user" }],
+      p_actor_id: userId,
+    })).error);
+
     const player = await admin.from("players").select("nickname").eq("id", playerId).single();
     assert.ifError(player.error);
     assert.equal(player.data.nickname, nickname);
@@ -104,6 +124,7 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ?
     assert.ok(signIn.error);
     assert.equal(signIn.data.session, null);
   } finally {
+    if (userId) assert.ifError((await admin.from("audit_logs").delete().eq("actor_id", userId)).error);
     if (userId) assert.ifError((await admin.auth.admin.deleteUser(userId)).error);
     if (playerId) assert.ifError((await admin.from("players").delete().eq("id", playerId)).error);
   }
