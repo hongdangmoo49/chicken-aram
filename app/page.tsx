@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getMatchCounts, getMatches, getPlayers } from "../db/site-data";
 import { MatchCard, PageShell, PlayerRow, SectionHeading } from "./ui";
@@ -29,7 +30,7 @@ export default async function Home() {
           </div>
         </div>
         <div className="hero-visual">
-          <img className="hero-image" src="/main-character.jpg" alt="치킨을 먹고 있는 포로 캐릭터" />
+          <Image className="hero-image" src="/main-character.jpg" alt="치킨을 먹고 있는 포로 캐릭터" height={640} priority width={640} />
           <div className="hero-match">
             <div className="hero-match-top">
               <span className="live-dot" /> NEXT MATCH

@@ -1,4 +1,5 @@
 import { getPlayerProfile, setPlayerThumbnail } from "../../../../db/site-data";
+import { normalizePlayerThumbnail } from "../../../../lib/player-thumbnail";
 import { createSupabaseAdminClient } from "../../../../lib/supabase/admin";
 import { takeRateLimit } from "../../../../lib/rate-limit";
 import { redirectWithToast } from "../../../../lib/toast-response";
@@ -19,12 +20,18 @@ export async function POST(request: Request) {
     return redirectWithToast(request, "/profile", "error", "3MB 이하의 JPG, PNG, WebP 파일만 사용할 수 있습니다.");
   }
 
-  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-  const key = `${user.id}/${crypto.randomUUID()}.${extension}`;
+  let normalizedImage: Buffer;
+  try {
+    normalizedImage = await normalizePlayerThumbnail(Buffer.from(await file.arrayBuffer()));
+  } catch {
+    return redirectWithToast(request, "/profile", "error", "올바른 JPG, PNG, WebP 이미지가 아닙니다.");
+  }
+
+  const key = `${user.id}/${crypto.randomUUID()}.webp`;
   const admin = createSupabaseAdminClient();
   const { error: uploadError } = await admin.storage
     .from("player-thumbnails")
-    .upload(key, await file.arrayBuffer(), { contentType: file.type, upsert: false });
+    .upload(key, normalizedImage, { contentType: "image/webp", upsert: false });
   if (uploadError) return redirectWithToast(request, "/profile", "error", "이미지를 저장하지 못했습니다.");
 
   try {

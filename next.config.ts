@@ -18,6 +18,13 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [{
+      protocol: "https",
+      hostname: new URL(supabaseOrigin).hostname,
+      pathname: "/storage/v1/object/public/player-thumbnails/**",
+    }],
+  },
   async headers() {
     return [{
       source: "/(.*)",
