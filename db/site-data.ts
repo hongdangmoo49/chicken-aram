@@ -1,5 +1,6 @@
+import { unstable_cache } from "next/cache";
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
-import { createSupabaseServerClient } from "../lib/supabase/server";
+import { createSupabasePublicClient } from "../lib/supabase/public";
 import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-positions";
 import type { PlayerTierChange } from "../lib/player-tiers";
 import type { MatchResultInput, MatchWinner } from "../lib/match-results";
@@ -45,8 +46,8 @@ function fail(operation: string, error: { message: string } | null): never {
   throw new Error(`${operation}: ${error?.message ?? "unknown Supabase error"}`);
 }
 
-export async function getPlayers(): Promise<Player[]> {
-  const supabase = await createSupabaseServerClient();
+async function loadPlayers(): Promise<Player[]> {
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("players")
     .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions,tier_order");
@@ -74,8 +75,10 @@ export async function getPlayers(): Promise<Player[]> {
     });
 }
 
-export async function getMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
-  const supabase = await createSupabaseServerClient();
+export const getPlayers = unstable_cache(loadPlayers, ["players"], { revalidate: 15, tags: ["players"] });
+
+async function loadMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
+  const supabase = createSupabasePublicClient();
   let query = supabase
     .from("matches")
     .select("id,scheduled_at,played_at,map,status,team_a,team_b,a_score,b_score,mvp,mvp_player_id,winner,created_by");
@@ -101,8 +104,14 @@ export async function getMatches(options: { status?: Match["status"]; limit?: nu
   }));
 }
 
-export async function getMatchCounts() {
-  const supabase = await createSupabaseServerClient();
+const getCachedMatches = unstable_cache(loadMatches, ["matches"], { revalidate: 15, tags: ["matches"] });
+
+export async function getMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
+  return getCachedMatches(options);
+}
+
+async function loadMatchCounts() {
+  const supabase = createSupabasePublicClient();
   const count = async (status?: Match["status"]) => {
     let query = supabase.from("matches").select("id", { count: "exact", head: true });
     if (status) query = query.eq("status", status);
@@ -114,12 +123,20 @@ export async function getMatchCounts() {
   return { total, completed, scheduled };
 }
 
-export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
+export const getMatchCounts = unstable_cache(loadMatchCounts, ["match-counts"], { revalidate: 15, tags: ["matches"] });
+
+async function loadMatchParticipants(matchIds: number[]): Promise<MatchParticipant[]> {
   if (!matchIds.length) return [];
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabasePublicClient();
   const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group").in("match_id", matchIds);
   if (error) fail("대전 참가자 조회 실패", error);
   return (data ?? []).map((member) => ({ matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group }));
+}
+
+const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants"], { revalidate: 15, tags: ["matches"] });
+
+export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
+  return getCachedMatchParticipants([...matchIds].sort((a, b) => a - b));
 }
 
 export async function createBalancedSchedule(input: {
@@ -129,7 +146,7 @@ export async function createBalancedSchedule(input: {
   separatedGroups: number[][];
   createdBy: string;
 }) {
-  const allPlayers = await getPlayers();
+  const allPlayers = await loadPlayers();
   const selected = input.playerIds
     .map((id) => allPlayers.find((player) => player.id === id))
     .filter((player): player is Player => Boolean(player));
@@ -171,7 +188,7 @@ export async function updateScheduledMatch(id: number, scheduledAt: string, map:
 }
 
 export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: string; map: string; playerIds: number[]; separatedGroups: number[][] }) {
-  const allPlayers = await getPlayers();
+  const allPlayers = await loadPlayers();
   const selected = input.playerIds.map((id) => allPlayers.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
   const admin = createSupabaseAdminClient();
   const { data: currentMembers, error: memberError } = await admin.from("match_players").select("player_id,team").eq("match_id", input.id);
@@ -184,7 +201,7 @@ export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: 
 }
 
 export async function replaceScheduledMatchPlayers(input: { id: number; scheduledAt: string; map: string; teamAIds: number[]; teamBIds: number[] }) {
-  const allPlayers = await getPlayers();
+  const allPlayers = await loadPlayers();
   const selected = [...input.teamAIds, ...input.teamBIds].map((id) => allPlayers.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
   if (selected.length !== 10) throw new Error("교체할 선수 정보를 확인해 주세요.");
   if (selected.some((player) => player.tier === 5)) throw new Error("코치는 대전 참가자로 선택할 수 없습니다.");
