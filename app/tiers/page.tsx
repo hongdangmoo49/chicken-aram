@@ -1,6 +1,5 @@
 import { getPlayers } from "../../db/site-data";
 import { getCurrentUser } from "../auth";
-import { isAdmin } from "../roles";
 import { PageShell } from "../ui";
 import { TierDragBoard } from "./tier-drag-board";
 
@@ -9,7 +8,7 @@ export const metadata = { title: "선수 티어표" };
 
 export default async function TiersPage() {
   const [players, user] = await Promise.all([getPlayers(), getCurrentUser()]);
-  const admin = user ? await isAdmin(user.id) : false;
+  const admin = user ? user.role !== "user" : false;
   return <PageShell active="tiers">
     <header className="page-intro"><div><span className="eyebrow">PLAYER POWER RANKING</span><h1>선수 티어표</h1></div><p>1~4티어와 코치로 구분하며, 같은 티어에서는 누적 승률이 높은 선수가 앞에 배치됩니다.</p></header>
     <div className="filter-row"><span className="filter-chip active">전체 선수 {players.length}</span><span className="filter-chip">승률 우선</span></div>

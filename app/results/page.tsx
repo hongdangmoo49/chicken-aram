@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getMatchCounts, getMatchParticipants, getMatches, getPlayers, type Match, type Player } from "../../db/site-data";
 import { getCurrentUser } from "../auth";
-import { isAdmin } from "../roles";
 import { MatchCard, PageShell } from "../ui";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +37,7 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   ]);
   const members = await getMatchParticipants([...completed, ...scheduled].map((match) => match.id));
   const totalPages = Math.max(1, Math.ceil(matchCounts.completed / pageSize));
-  const admin = user ? await isAdmin(user.id) : false;
+  const admin = user ? user.role !== "user" : false;
   const playerById = new Map(players.map((player) => [player.id, player]));
   const participants = (matchId: number) => members.filter((member) => member.matchId === matchId).map((member) => playerById.get(member.playerId)).filter((player): player is Player => Boolean(player));
   return <PageShell active="results">

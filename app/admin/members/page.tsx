@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { withToast } from "../../../lib/toast";
 import { requireCurrentUser } from "../../auth";
-import { getMembers, getRole } from "../../roles";
+import { getMembers } from "../../roles";
 import { PageShell } from "../../ui";
 import { MemberRoleEditor } from "./member-role-editor";
 
@@ -10,7 +10,7 @@ export const metadata = { title: "멤버 관리" };
 
 export default async function MembersPage() {
   const user = await requireCurrentUser("/admin/members");
-  const role = await getRole(user.id);
+  const role = user.role;
   if (role === "user") redirect(withToast("/profile", "error", "관리자 권한이 필요합니다."));
 
   const members = await getMembers();

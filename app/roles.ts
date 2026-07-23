@@ -15,25 +15,6 @@ export const roleLabels: Record<AppRole, string> = {
   super_admin: "슈퍼 관리자",
 };
 
-export async function getRole(userId: string): Promise<AppRole> {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw new Error(`계정 권한 조회 실패: ${error.message}`);
-  return data?.role === "admin" || data?.role === "super_admin" ? data.role : "user";
-}
-
-export async function isAdmin(userId: string): Promise<boolean> {
-  return (await getRole(userId)) !== "user";
-}
-
-export async function isSuperAdmin(userId: string): Promise<boolean> {
-  return (await getRole(userId)) === "super_admin";
-}
-
 export async function getMembers(): Promise<Member[]> {
   const admin = createSupabaseAdminClient();
   const { data, error } = await admin

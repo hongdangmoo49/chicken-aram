@@ -4,7 +4,7 @@ import { playerTierLabel } from "../lib/player-tiers";
 import { getCurrentUser } from "./auth";
 import { signOut } from "./auth/actions";
 import { PlayerAvatar, PlayerPositions } from "./player-ui";
-import { getRole, roleLabels } from "./roles";
+import { roleLabels } from "./roles";
 
 export { PlayerAvatar, PlayerPositions } from "./player-ui";
 
@@ -18,7 +18,7 @@ const nav = [
 
 export async function PageShell({ active, children }: { active: string; children: React.ReactNode }) {
   const user = await getCurrentUser();
-  const role = user ? await getRole(user.id) : null;
+  const role = user?.role ?? null;
   return (
     <>
       <header className="site-header">

@@ -1,21 +1,24 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../lib/supabase/server";
+import type { AppRole } from "./roles";
 
 export type AppUser = {
   id: string;
   email: string;
   displayName: string;
   thumbnailKey: string | null;
+  role: AppRole;
 };
 
-export async function getCurrentUser(): Promise<AppUser | null> {
+export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user?.email) return null;
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name,player_id")
+    .select("display_name,player_id,role")
     .eq("id", data.user.id)
     .maybeSingle();
   const { data: player } = profile?.player_id ? await supabase
@@ -29,8 +32,9 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     data.user.user_metadata?.full_name ??
     data.user.email.split("@")[0];
 
-  return { id: data.user.id, email: data.user.email, displayName, thumbnailKey: player?.thumbnail_path ?? null };
-}
+  const role = profile?.role === "admin" || profile?.role === "super_admin" ? profile.role : "user";
+  return { id: data.user.id, email: data.user.email, displayName, thumbnailKey: player?.thumbnail_path ?? null, role };
+});
 
 export async function requireCurrentUser(returnTo: string): Promise<AppUser> {
   const user = await getCurrentUser();
