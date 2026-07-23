@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import { createSupabasePublicClient } from "../lib/supabase/public";
 import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-positions";
@@ -42,8 +42,16 @@ export type MatchParticipant = {
 
 export type PlayerProfile = Player & { roundWins: number; roundLosses: number };
 
+const CACHE_SECONDS = 300;
+const PLAYERS_CACHE_TAG = "players";
+const MATCHES_CACHE_TAG = "matches";
+
 function fail(operation: string, error: { message: string } | null): never {
   throw new Error(`${operation}: ${error?.message ?? "unknown Supabase error"}`);
+}
+
+function expirePublicCache(...tags: string[]) {
+  for (const tag of tags) revalidateTag(tag, { expire: 0 });
 }
 
 async function loadPlayers(): Promise<Player[]> {
@@ -75,7 +83,7 @@ async function loadPlayers(): Promise<Player[]> {
     });
 }
 
-export const getPlayers = unstable_cache(loadPlayers, ["players"], { revalidate: 15, tags: ["players"] });
+export const getPlayers = unstable_cache(loadPlayers, ["players"], { revalidate: CACHE_SECONDS, tags: [PLAYERS_CACHE_TAG] });
 
 async function loadMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
   const supabase = createSupabasePublicClient();
@@ -104,7 +112,7 @@ async function loadMatches(options: { status?: Match["status"]; limit?: number; 
   }));
 }
 
-const getCachedMatches = unstable_cache(loadMatches, ["matches"], { revalidate: 15, tags: ["matches"] });
+const getCachedMatches = unstable_cache(loadMatches, ["matches"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
 
 export async function getMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
   return getCachedMatches(options);
@@ -118,7 +126,7 @@ async function loadMatchCounts() {
   return { total: Number(counts.total), completed: Number(counts.completed), scheduled: Number(counts.scheduled) };
 }
 
-export const getMatchCounts = unstable_cache(loadMatchCounts, ["match-counts"], { revalidate: 15, tags: ["matches"] });
+export const getMatchCounts = unstable_cache(loadMatchCounts, ["match-counts"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
 
 async function loadMatchParticipants(matchIds: number[]): Promise<MatchParticipant[]> {
   if (!matchIds.length) return [];
@@ -128,7 +136,7 @@ async function loadMatchParticipants(matchIds: number[]): Promise<MatchParticipa
   return (data ?? []).map((member) => ({ matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group }));
 }
 
-const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants"], { revalidate: 15, tags: ["matches"] });
+const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
 
 export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
   return getCachedMatchParticipants([...matchIds].sort((a, b) => a - b));
@@ -168,6 +176,7 @@ export async function createBalancedSchedule(input: {
     p_assignments: rows.map((row) => ({ playerId: row.player_id, team: row.team, separatedGroup: row.separated_group })),
   });
   if (error) fail("대전 일정 생성 실패", error);
+  expirePublicCache(MATCHES_CACHE_TAG);
 }
 
 export async function updateScheduledMatch(id: number, scheduledAt: string, map: string) {
@@ -180,6 +189,7 @@ export async function updateScheduledMatch(id: number, scheduledAt: string, map:
     .select("id")
     .maybeSingle();
   if (error || !data) fail("예정 대전 수정 실패", error);
+  expirePublicCache(MATCHES_CACHE_TAG);
 }
 
 export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: string; map: string; playerIds: number[]; separatedGroups: number[][] }) {
@@ -193,6 +203,7 @@ export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: 
   const assignments = [...teamA.map((player) => ({ playerId: player.id, team: "A" as const })), ...teamB.map((player) => ({ playerId: player.id, team: "B" as const }))].map((assignment) => ({ ...assignment, separatedGroup: groupByPlayer.get(assignment.playerId) ?? null }));
   const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments });
   if (error) fail("팀 재편성 실패", error);
+  expirePublicCache(MATCHES_CACHE_TAG);
 }
 
 export async function replaceScheduledMatchPlayers(input: { id: number; scheduledAt: string; map: string; teamAIds: number[]; teamBIds: number[] }) {
@@ -204,6 +215,7 @@ export async function replaceScheduledMatchPlayers(input: { id: number; schedule
   const assignments = [...input.teamAIds.map((playerId) => ({ playerId, team: "A" as const })), ...input.teamBIds.map((playerId) => ({ playerId, team: "B" as const }))].map((assignment) => ({ ...assignment, separatedGroup: null }));
   const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments });
   if (error) fail("팀 선수 교체 실패", error);
+  expirePublicCache(MATCHES_CACHE_TAG);
 }
 
 export async function deleteScheduledMatch(id: number) {
@@ -216,6 +228,7 @@ export async function deleteScheduledMatch(id: number) {
     .select("id")
     .maybeSingle();
   if (error || !data) fail("예정 대전 삭제 실패", error);
+  expirePublicCache(MATCHES_CACHE_TAG);
 }
 
 export async function getPlayerProfile(userId: string): Promise<PlayerProfile | null> {
@@ -266,6 +279,7 @@ export async function setPlayerNickname(userId: string, nickname: string) {
     .select("id")
     .single();
   if (error) fail("선수 닉네임 저장 실패", error);
+  expirePublicCache(PLAYERS_CACHE_TAG);
 }
 
 export async function setPlayerThumbnail(playerId: number, thumbnailKey: string) {
@@ -275,6 +289,7 @@ export async function setPlayerThumbnail(playerId: number, thumbnailKey: string)
     .update({ thumbnail_path: thumbnailKey })
     .eq("id", playerId);
   if (error) fail("선수 썸네일 저장 실패", error);
+  expirePublicCache(PLAYERS_CACHE_TAG);
 }
 
 export async function setPlayerPositions(playerId: number, positions: PlayerPosition[]) {
@@ -284,12 +299,14 @@ export async function setPlayerPositions(playerId: number, positions: PlayerPosi
     .update({ preferred_positions: positions })
     .eq("id", playerId);
   if (error) fail("선호 포지션 저장 실패", error);
+  expirePublicCache(PLAYERS_CACHE_TAG);
 }
 
 export async function setPlayerTiers(changes: PlayerTierChange[]) {
   const admin = createSupabaseAdminClient();
   const { error } = await admin.rpc("set_player_tiers", { changes });
   if (error) fail("선수 티어 저장 실패", error);
+  expirePublicCache(PLAYERS_CACHE_TAG);
 }
 
 export async function saveMatchResult(input: MatchResultInput & { matchId: number }) {
@@ -303,4 +320,5 @@ export async function saveMatchResult(input: MatchResultInput & { matchId: numbe
     p_mvp_player_id: input.mvpPlayerId,
   });
   if (error) fail("대전 결과 저장 실패", error);
+  expirePublicCache(MATCHES_CACHE_TAG, PLAYERS_CACHE_TAG);
 }

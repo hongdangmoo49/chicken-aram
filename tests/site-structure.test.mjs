@@ -129,7 +129,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(tierRoute, /normalizeTierChanges/);
   assert.match(siteData, /setPlayerTiers/);
   assert.match(siteData, /unstable_cache/);
-  assert.match(siteData, /revalidate: 15/);
+  assert.match(siteData, /const CACHE_SECONDS = 300/);
   assert.match(siteData, /createSupabasePublicClient/);
   assert.match(roles, /super_admin/);
   assert.doesNotMatch(roles, /getRole|isAdmin|isSuperAdmin/);

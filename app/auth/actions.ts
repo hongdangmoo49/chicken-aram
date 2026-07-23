@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidateTag } from "next/cache";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
 import { clientAddress, takeRateLimit } from "../../lib/rate-limit";
@@ -56,6 +57,7 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) redirect(withToast("/login", "error", "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요."));
+  revalidateTag("players", { expire: 0 });
   if (data.session) {
     await supabase.auth.signOut();
     redirect(withToast("/login", "error", "이메일 인증 설정이 적용되지 않았습니다. 관리자에게 문의해 주세요."));
