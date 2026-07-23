@@ -48,6 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     await updateScheduledMatch(id, scheduledAtIso, map);
     return redirectWithToast(request, "/schedule", "success", "예정 대전을 수정했습니다.");
   } catch (error) {
-    return redirectWithToast(request, "/schedule", "error", error instanceof Error ? error.message : "예정 대전을 변경하지 못했습니다.");
+    console.error("schedule update failed", error);
+    return redirectWithToast(request, "/schedule", "error", "예정 대전을 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
 }

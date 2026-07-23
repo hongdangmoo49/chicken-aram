@@ -17,7 +17,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     await saveMatchResult({ matchId, ...result });
   } catch (error) {
-    return redirectWithToast(request, "/results", "error", error instanceof Error ? error.message : "대전 결과를 저장하지 못했습니다.");
+    console.error("match result save failed", error);
+    return redirectWithToast(request, "/results", "error", "대전 결과를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
   }
   return redirectWithToast(request, "/results", "success", "대전 결과와 선수 승패를 저장했습니다.");
 }
