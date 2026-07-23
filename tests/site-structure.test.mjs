@@ -120,8 +120,10 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(ui, /\/admin\/members/);
   assert.match(ui, /PlayerAvatar player=/);
   assert.match(auth, /cache\(async/);
-  assert.match(auth, /display_name,player_id,role/);
+  assert.match(auth, /getClaims\(\)/);
+  assert.match(auth, /display_name,role,players\(thumbnail_path\)/);
   assert.match(auth, /thumbnail_path/);
+  assert.doesNotMatch(auth, /\.from\("players"\)/);
   assert.match(roleRoute, /user\.role !== "super_admin"/);
   assert.match(roleRoute, /normalizeMemberRoleChanges/);
   assert.match(roleRoute, /\/admin\/members/);

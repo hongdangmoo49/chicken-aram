@@ -13,27 +13,29 @@ export type AppUser = {
 
 export const getCurrentUser = cache(async (): Promise<AppUser | null> => {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user?.email) return null;
+  const { data, error } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  const userId = typeof claims?.sub === "string" ? claims.sub : null;
+  const email = typeof claims?.email === "string" ? claims.email : null;
+  if (error || !claims || !userId || !email) return null;
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name,player_id,role")
-    .eq("id", data.user.id)
+    .select("display_name,role,players(thumbnail_path)")
+    .eq("id", userId)
     .maybeSingle();
-  const { data: player } = profile?.player_id ? await supabase
-    .from("players")
-    .select("thumbnail_path")
-    .eq("id", profile.player_id)
-    .maybeSingle() : { data: null };
+  const metadata = claims.user_metadata && typeof claims.user_metadata === "object"
+    ? claims.user_metadata as Record<string, unknown>
+    : {};
+  const player = profile?.players as unknown as { thumbnail_path: string | null } | null;
   const displayName =
     profile?.display_name ??
-    data.user.user_metadata?.display_name ??
-    data.user.user_metadata?.full_name ??
-    data.user.email.split("@")[0];
+    (typeof metadata.display_name === "string" ? metadata.display_name : null) ??
+    (typeof metadata.full_name === "string" ? metadata.full_name : null) ??
+    email.split("@")[0];
 
   const role = profile?.role === "admin" || profile?.role === "super_admin" ? profile.role : "user";
-  return { id: data.user.id, email: data.user.email, displayName, thumbnailKey: player?.thumbnail_path ?? null, role };
+  return { id: userId, email, displayName, thumbnailKey: player?.thumbnail_path ?? null, role };
 });
 
 export async function requireCurrentUser(returnTo: string): Promise<AppUser> {

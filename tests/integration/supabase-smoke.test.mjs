@@ -89,9 +89,11 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ?
     userId = created.data.user.id;
     assert.equal(Boolean(created.data.user.email_confirmed_at), false);
 
-    const profile = await admin.from("profiles").select("display_name,player_id").eq("id", userId).single();
+    const profile = await admin.from("profiles").select("display_name,player_id,role,players(thumbnail_path)").eq("id", userId).single();
     assert.ifError(profile.error);
     assert.equal(profile.data.display_name, nickname);
+    assert.equal(profile.data.role, "user");
+    assert.equal(Array.isArray(profile.data.players), false);
     playerId = profile.data.player_id;
 
     const player = await admin.from("players").select("nickname").eq("id", playerId).single();
