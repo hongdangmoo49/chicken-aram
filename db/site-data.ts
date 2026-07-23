@@ -170,6 +170,7 @@ export async function replaceScheduledMatchPlayers(input: { id: number; schedule
   const allPlayers = await getPlayers();
   const selected = [...input.teamAIds, ...input.teamBIds].map((id) => allPlayers.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
   if (selected.length !== 10) throw new Error("교체할 선수 정보를 확인해 주세요.");
+  if (selected.some((player) => player.tier === 5)) throw new Error("코치는 대전 참가자로 선택할 수 없습니다.");
   const admin = createSupabaseAdminClient();
   const assignments = [...input.teamAIds.map((playerId) => ({ playerId, team: "A" as const })), ...input.teamBIds.map((playerId) => ({ playerId, team: "B" as const }))].map((assignment) => ({ ...assignment, separatedGroup: null }));
   const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments });

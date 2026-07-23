@@ -15,6 +15,7 @@ export function playerPower(player: BalancePlayer) {
 export function balanceTeams(players: BalancePlayer[], separatedGroups: number[][], previousTeamAIds: number[] = []) {
   if (players.length !== 10) throw new Error("정확히 10명을 선택해야 합니다.");
   if (new Set(players.map((player) => player.id)).size !== 10) throw new Error("선수가 중복되었습니다.");
+  if (players.some((player) => player.tier === 5)) throw new Error("코치는 대전 참가자로 선택할 수 없습니다.");
   if (separatedGroups.some((group) => group.length > 2)) throw new Error("분리 그룹은 최대 2명까지 지정할 수 있습니다.");
 
   const indexById = new Map(players.map((player, index) => [player.id, index]));

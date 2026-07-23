@@ -11,3 +11,8 @@ test("balances ten players while separating a requested pair", () => {
   const rebalanced = balanceTeams(players, [[1, 2]], result.teamA.map((player) => player.id));
   assert.notDeepEqual(new Set(rebalanced.teamA.map((player) => player.id)), new Set(result.teamA.map((player) => player.id)));
 });
+
+test("keeps coaches out of playable team assignments", () => {
+  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: index === 9 ? 5 : 4, wins: 0, losses: 0 }));
+  assert.throws(() => balanceTeams(players, []), /코치는 대전 참가자로 선택할 수 없습니다/);
+});
