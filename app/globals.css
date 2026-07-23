@@ -119,6 +119,7 @@ button, input, select { font: inherit; }
 .win-rate { min-width: 42px; text-align: right; font: 700 12px/1 ui-monospace, monospace; }
 .compact-matches .match-card { padding: 18px 0; border-top: 1px solid var(--line); }
 .compact-matches .match-footer { display: none; }
+.pagination { display: flex; justify-content: space-between; margin-top: 18px; }
 
 .page-intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin: 18px 0 46px; }
 .page-intro h1 { font-size: clamp(44px, 6vw, 72px); }

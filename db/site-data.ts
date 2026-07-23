@@ -74,12 +74,15 @@ export async function getPlayers(): Promise<Player[]> {
     });
 }
 
-export async function getMatches(): Promise<Match[]> {
+export async function getMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("matches")
-    .select("id,scheduled_at,played_at,map,status,team_a,team_b,a_score,b_score,mvp,mvp_player_id,winner,created_by")
-    .order("scheduled_at", { ascending: false });
+    .select("id,scheduled_at,played_at,map,status,team_a,team_b,a_score,b_score,mvp,mvp_player_id,winner,created_by");
+  if (options.status) query = query.eq("status", options.status);
+  query = query.order(options.status === "completed" ? "played_at" : "scheduled_at", { ascending: options.ascending ?? false });
+  if (options.limit) query = query.range(options.offset ?? 0, (options.offset ?? 0) + options.limit - 1);
+  const { data, error } = await query;
   if (error) fail("대전 목록 조회 실패", error);
 
   return (data ?? []).map((match) => ({
@@ -98,9 +101,23 @@ export async function getMatches(): Promise<Match[]> {
   }));
 }
 
-export async function getMatchParticipants(): Promise<MatchParticipant[]> {
+export async function getMatchCounts() {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group");
+  const count = async (status?: Match["status"]) => {
+    let query = supabase.from("matches").select("id", { count: "exact", head: true });
+    if (status) query = query.eq("status", status);
+    const { count: value, error } = await query;
+    if (error) fail("대전 수 조회 실패", error);
+    return value ?? 0;
+  };
+  const [total, completed, scheduled] = await Promise.all([count(), count("completed"), count("scheduled")]);
+  return { total, completed, scheduled };
+}
+
+export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
+  if (!matchIds.length) return [];
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group").in("match_id", matchIds);
   if (error) fail("대전 참가자 조회 실패", error);
   return (data ?? []).map((member) => ({ matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group }));
 }

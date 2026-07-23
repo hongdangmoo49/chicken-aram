@@ -1,13 +1,16 @@
 import Link from "next/link";
-import { getMatches, getPlayers } from "../db/site-data";
+import { getMatchCounts, getMatches, getPlayers } from "../db/site-data";
 import { MatchCard, PageShell, PlayerRow, SectionHeading } from "./ui";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [players, matches] = await Promise.all([getPlayers(), getMatches()]);
-  const upcoming = matches.filter((match) => match.status === "scheduled");
-  const recent = matches.filter((match) => match.status === "completed");
+  const [players, upcoming, recent, matchCounts] = await Promise.all([
+    getPlayers(),
+    getMatches({ status: "scheduled", limit: 1, ascending: true }),
+    getMatches({ status: "completed", limit: 3 }),
+    getMatchCounts(),
+  ]);
   const winRate = (player: (typeof players)[number]) =>
     player.wins + player.losses === 0
       ? 0
@@ -38,10 +41,10 @@ export default async function Home() {
       </section>
 
       <section className="stats-strip" aria-label="시즌 현황">
-        <div><strong>{matches.length}</strong><span>전체 대전</span></div>
+        <div><strong>{matchCounts.total}</strong><span>전체 대전</span></div>
         <div><strong>{players.length}</strong><span>등록 선수</span></div>
-        <div><strong>{recent.length}</strong><span>완료 대전</span></div>
-        <div><strong>{upcoming.length}</strong><span>예정 대전</span></div>
+        <div><strong>{matchCounts.completed}</strong><span>완료 대전</span></div>
+        <div><strong>{matchCounts.scheduled}</strong><span>예정 대전</span></div>
       </section>
 
       <div className="dashboard-grid">
@@ -57,7 +60,7 @@ export default async function Home() {
         <section className="panel">
           <SectionHeading kicker="RECENT MATCHES" title="최근 대전 결과" href="/results" />
           <div className="compact-matches">
-            {recent.slice(0, 3).map((match) => <MatchCard key={match.id} match={match} compact />)}
+            {recent.map((match) => <MatchCard key={match.id} match={match} compact />)}
           </div>
         </section>
       </div>

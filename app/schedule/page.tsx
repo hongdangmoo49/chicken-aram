@@ -23,8 +23,8 @@ function TeamPlayerFields({ matchId, members, players }: { matchId: number; memb
 }
 
 export default async function SchedulePage() {
-  const [matches, players, members, user] = await Promise.all([getMatches(), getPlayers(), getMatchParticipants(), getCurrentUser()]);
-  const upcoming = matches.filter((match) => match.status === "scheduled");
+  const [upcoming, players, user] = await Promise.all([getMatches({ status: "scheduled", limit: 50, ascending: true }), getPlayers(), getCurrentUser()]);
+  const members = await getMatchParticipants(upcoming.map((match) => match.id));
   const admin = user ? await isAdmin(user.id) : false;
   return <PageShell active="schedule">
     <header className="page-intro"><div><span className="eyebrow">UPCOMING MATCHES</span><h1>대전 예정</h1></div><p>참가자 10명을 고르면 티어와 승률을 기준으로 가장 균형에 가까운 A팀과 B팀을 만듭니다.</p></header>
