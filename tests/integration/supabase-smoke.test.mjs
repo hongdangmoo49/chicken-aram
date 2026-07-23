@@ -41,6 +41,33 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ?
   });
   assert.match(invalidSchedule.error?.message ?? "", /invalid schedule input/);
 
+  const playable = await admin.from("players").select("id").neq("tier", 5).order("id").limit(10);
+  assert.ifError(playable.error);
+  assert.equal(playable.data.length, 10);
+  let matchId;
+  try {
+    const schedule = await admin.rpc("create_balanced_schedule", {
+      p_scheduled_at: new Date(Date.now() + 86_400_000).toISOString(),
+      p_map: "통합 테스트",
+      p_created_by: null,
+      p_assignments: playable.data.map((player, index) => ({
+        playerId: player.id,
+        team: index < 5 ? "A" : "B",
+        separatedGroup: null,
+      })),
+    });
+    assert.ifError(schedule.error);
+    matchId = schedule.data;
+    const participants = await admin.from("match_players").select("player_id", { count: "exact", head: true }).eq("match_id", matchId);
+    assert.ifError(participants.error);
+    assert.equal(participants.count, 10);
+  } finally {
+    if (matchId) {
+      const cleanup = await admin.from("matches").delete().eq("id", matchId);
+      assert.ifError(cleanup.error);
+    }
+  }
+
   const suffix = randomUUID().slice(0, 8);
   const email = `smoke-${suffix}@example.com`;
   const nickname = `smoke-${suffix}`;
@@ -71,7 +98,7 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ?
     assert.ok(signIn.error);
     assert.equal(signIn.data.session, null);
   } finally {
-    if (userId) await admin.auth.admin.deleteUser(userId);
-    if (playerId) await admin.from("players").delete().eq("id", playerId);
+    if (userId) assert.ifError((await admin.auth.admin.deleteUser(userId)).error);
+    if (playerId) assert.ifError((await admin.from("players").delete().eq("id", playerId)).error);
   }
 });
