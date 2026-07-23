@@ -1,6 +1,7 @@
 import { createBalancedSchedule } from "../../../db/site-data";
 import { redirectWithToast } from "../../../lib/toast-response";
 import { takeRateLimit } from "../../../lib/rate-limit";
+import { reportError } from "../../../lib/observability";
 import { getCurrentUser } from "../../auth";
 
 export async function POST(request: Request) {
@@ -24,8 +25,8 @@ export async function POST(request: Request) {
   try {
     await createBalancedSchedule({ scheduledAt: new Date(`${scheduledAt}+09:00`).toISOString(), map, playerIds, separatedGroups: [...groups.values()], createdBy: user.id });
   } catch (error) {
-    console.error("schedule creation failed", error);
-    return redirectWithToast(request, "/schedule", "error", "팀을 나누지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    const errorId = reportError("schedule.create", error);
+    return redirectWithToast(request, "/schedule", "error", `팀을 나누지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);
   }
   return redirectWithToast(request, "/schedule", "success", "대전 일정과 팀을 만들었습니다.");
 }

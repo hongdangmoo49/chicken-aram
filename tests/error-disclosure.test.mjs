@@ -11,7 +11,7 @@ test("keeps database errors in server logs instead of user toasts", async () => 
     readFile(new URL("app/api/results/[id]/route.ts", root), "utf8"),
   ]);
   for (const route of routes) {
-    assert.match(route, /console\.error/);
+    assert.match(route, /reportError/);
     assert.doesNotMatch(route, /error instanceof Error \? error\.message/);
   }
 });

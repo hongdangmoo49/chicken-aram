@@ -1,6 +1,7 @@
 import { deleteScheduledMatch, rebalanceScheduledMatch, replaceScheduledMatchPlayers, updateScheduledMatch } from "../../../../db/site-data";
 import { normalizeTeamPlayers } from "../../../../lib/team-players";
 import { takeRateLimit } from "../../../../lib/rate-limit";
+import { reportError } from "../../../../lib/observability";
 import { redirectWithToast } from "../../../../lib/toast-response";
 import { getCurrentUser } from "../../../auth";
 
@@ -49,7 +50,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     await updateScheduledMatch(id, scheduledAtIso, map);
     return redirectWithToast(request, "/schedule", "success", "예정 대전을 수정했습니다.");
   } catch (error) {
-    console.error("schedule update failed", error);
-    return redirectWithToast(request, "/schedule", "error", "예정 대전을 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    const errorId = reportError("schedule.update", error, { matchId: id, action });
+    return redirectWithToast(request, "/schedule", "error", `예정 대전을 변경하지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);
   }
 }

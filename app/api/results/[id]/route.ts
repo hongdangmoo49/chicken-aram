@@ -1,6 +1,7 @@
 import { saveMatchResult } from "../../../../db/site-data";
 import { normalizeMatchResult } from "../../../../lib/match-results";
 import { takeRateLimit } from "../../../../lib/rate-limit";
+import { reportError } from "../../../../lib/observability";
 import { redirectWithToast } from "../../../../lib/toast-response";
 import { getCurrentUser } from "../../../auth";
 
@@ -18,8 +19,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     await saveMatchResult({ matchId, ...result });
   } catch (error) {
-    console.error("match result save failed", error);
-    return redirectWithToast(request, "/results", "error", "대전 결과를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+    const errorId = reportError("result.save", error, { matchId });
+    return redirectWithToast(request, "/results", "error", `대전 결과를 저장하지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);
   }
   return redirectWithToast(request, "/results", "success", "대전 결과와 선수 승패를 저장했습니다.");
 }

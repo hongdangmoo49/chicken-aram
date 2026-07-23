@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
+import { reportError } from "./observability";
 import { createSupabaseAdminClient } from "./supabase/admin";
 
 export async function clientAddress(request?: Request) {
@@ -18,7 +19,7 @@ export async function takeRateLimit(scope: string, subject: string, limit: numbe
     p_window_seconds: windowSeconds,
   });
   if (error) {
-    console.error("rate limit check failed", error);
+    reportError("rate-limit.check", error, { scope });
     return false;
   }
   return data === true;
