@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs && npm run test:integration",
+    "test:e2e": "playwright test",
     "test:integration": "node --test tests/integration/*.test.mjs",
     "lint": "eslint . --ignore-pattern .next --ignore-pattern dist"
   },
@@ -22,6 +23,7 @@
     "sharp": "0.35.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
