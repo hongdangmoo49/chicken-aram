@@ -14,6 +14,10 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ?
   const admin = client(serviceRoleKey);
   const anonymous = client(publishableKey);
 
+  const matchCounts = await anonymous.rpc("get_match_counts").single();
+  assert.ifError(matchCounts.error);
+  assert.equal(matchCounts.data.total, matchCounts.data.completed + matchCounts.data.scheduled);
+
   const { data: samplePlayer, error: sampleError } = await admin.from("players").select("id,wins").limit(1).single();
   assert.ifError(sampleError);
   await anonymous.from("players").update({ wins: samplePlayer.wins + 100 }).eq("id", samplePlayer.id);

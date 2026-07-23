@@ -112,15 +112,10 @@ export async function getMatches(options: { status?: Match["status"]; limit?: nu
 
 async function loadMatchCounts() {
   const supabase = createSupabasePublicClient();
-  const count = async (status?: Match["status"]) => {
-    let query = supabase.from("matches").select("id", { count: "exact", head: true });
-    if (status) query = query.eq("status", status);
-    const { count: value, error } = await query;
-    if (error) fail("대전 수 조회 실패", error);
-    return value ?? 0;
-  };
-  const [total, completed, scheduled] = await Promise.all([count(), count("completed"), count("scheduled")]);
-  return { total, completed, scheduled };
+  const { data, error } = await supabase.rpc("get_match_counts").single();
+  if (error || !data) fail("대전 수 조회 실패", error);
+  const counts = data as { total: number | string; completed: number | string; scheduled: number | string };
+  return { total: Number(counts.total), completed: Number(counts.completed), scheduled: Number(counts.scheduled) };
 }
 
 export const getMatchCounts = unstable_cache(loadMatchCounts, ["match-counts"], { revalidate: 15, tags: ["matches"] });
