@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
+import { clientAddress, takeRateLimit } from "../../lib/rate-limit";
 import { siteUrl } from "../../lib/site-url";
 import { withToast } from "../../lib/toast";
 
@@ -11,6 +12,9 @@ export async function signIn(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const returnTo = String(formData.get("returnTo") ?? "/profile");
   if (!email || !password) redirect(withToast("/login", "error", "이메일과 비밀번호를 입력해 주세요."));
+  if (!(await takeRateLimit("sign-in", await clientAddress(), 10, 300))) {
+    redirect(withToast("/login", "error", "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요."));
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -25,6 +29,9 @@ export async function signUp(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   if (!displayName || displayName.length > 30 || !email || password.length < 8) {
     redirect(withToast("/login", "error", "1~30자 닉네임, 이메일, 8자 이상의 비밀번호를 입력해 주세요."));
+  }
+  if (!(await takeRateLimit("sign-up", await clientAddress(), 5, 3600))) {
+    redirect(withToast("/login", "error", "회원가입 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요."));
   }
 
   const admin = createSupabaseAdminClient();

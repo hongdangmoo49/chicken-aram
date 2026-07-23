@@ -1,4 +1,5 @@
 import { normalizeMemberRoleChanges } from "../../../../lib/member-roles";
+import { takeRateLimit } from "../../../../lib/rate-limit";
 import { redirectWithToast } from "../../../../lib/toast-response";
 import { getCurrentUser } from "../../../auth";
 import { isSuperAdmin, setMemberRoles } from "../../../roles";
@@ -9,6 +10,7 @@ export async function POST(request: Request) {
   if (!(await isSuperAdmin(user.id))) {
     return redirectWithToast(request, "/admin/members", "error", "슈퍼 관리자 권한이 필요합니다.");
   }
+  if (!(await takeRateLimit("admin-write", user.id, 60, 600))) return redirectWithToast(request, "/admin/members", "error", "관리 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
 
   const form = await request.formData();
   let value: unknown;

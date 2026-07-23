@@ -1,5 +1,6 @@
 import { deleteScheduledMatch, rebalanceScheduledMatch, replaceScheduledMatchPlayers, updateScheduledMatch } from "../../../../db/site-data";
 import { normalizeTeamPlayers } from "../../../../lib/team-players";
+import { takeRateLimit } from "../../../../lib/rate-limit";
 import { redirectWithToast } from "../../../../lib/toast-response";
 import { getCurrentUser } from "../../../auth";
 import { isAdmin } from "../../../roles";
@@ -10,6 +11,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const user = await getCurrentUser();
   if (!user) return redirectWithToast(request, "/login", "error", "로그인이 필요합니다.");
   if (!(await isAdmin(user.id))) return redirectWithToast(request, "/schedule", "error", "관리자 권한이 필요합니다.");
+  if (!(await takeRateLimit("admin-write", user.id, 60, 600))) return redirectWithToast(request, "/schedule", "error", "관리 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
 
   const id = Number((await params).id);
   const form = await request.formData();
