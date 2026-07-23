@@ -137,7 +137,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(authActions, /from\("profiles"\)\.select\("display_name"\)/);
   assert.match(authActions, /이미 사용 중인 닉네임/);
   assert.match(authActions, /로그인했습니다/);
-  assert.doesNotMatch(authActions, /emailRedirectTo|인증 메일/);
+  assert.match(authActions, /emailRedirectTo/);
+  assert.match(authActions, /인증 메일/);
   assert.match(toast, /role=\{type === "error" \? "alert" : "status"\}/);
   assert.match(styles, /signup-form:valid/);
   assert.match(styles, /toast-success/);

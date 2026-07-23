@@ -33,6 +33,7 @@ export default async function LoginPage({
           </form>
           <form action={signUp} className="form-grid signup-form">
             <h2>회원가입</h2>
+            <p>가입 후 이메일로 받은 링크를 눌러 인증해야 로그인할 수 있습니다.</p>
             <div className="field"><label htmlFor="signup-name">닉네임</label><input id="signup-name" name="displayName" autoComplete="nickname" maxLength={30} required /></div>
             <div className="field"><label htmlFor="signup-email">이메일</label><input id="signup-email" name="email" type="email" autoComplete="email" required /></div>
             <div className="field"><label htmlFor="signup-password">비밀번호</label><input id="signup-password" name="password" type="password" minLength={8} autoComplete="new-password" required /></div>

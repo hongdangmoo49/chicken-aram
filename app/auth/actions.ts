@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
+import { siteUrl } from "../../lib/site-url";
 import { withToast } from "../../lib/toast";
 
 export async function signIn(formData: FormData) {
@@ -41,14 +42,18 @@ export async function signUp(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { display_name: displayName } },
+    options: { data: { display_name: displayName }, emailRedirectTo: `${siteUrl}/auth/callback` },
   });
 
   if (error) redirect(withToast("/login", "error", "회원가입을 완료하지 못했습니다. 입력 내용을 확인해 주세요."));
-  redirect(withToast("/profile", "success", "회원가입이 완료되었습니다."));
+  if (data.session) {
+    await supabase.auth.signOut();
+    redirect(withToast("/login", "error", "이메일 인증 설정이 적용되지 않았습니다. 관리자에게 문의해 주세요."));
+  }
+  redirect(withToast("/login", "success", "인증 메일을 보냈습니다. 이메일 인증 후 로그인해 주세요."));
 }
 
 export async function signOut() {

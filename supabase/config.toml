@@ -1,0 +1,21 @@
+project_id = "chicken-aram"
+
+[auth]
+site_url = "https://chicken-aram.vercel.app"
+additional_redirect_urls = [
+  "http://localhost:3000/auth/callback",
+  "https://chicken-aram.vercel.app/auth/callback",
+]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+max_frequency = "1m"
+otp_length = 8
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[storage.vector]
+enabled = false
