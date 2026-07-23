@@ -42,6 +42,7 @@ button, input, select { font: inherit; }
 .main-nav a { padding: 9px 13px; border-radius: 8px; color: var(--muted); font-size: 14px; font-weight: 650; transition: 150ms ease; }
 .main-nav a:hover, .main-nav a.active { background: rgba(255,255,255,.06); color: var(--text); }
 .account { display: flex; align-items: center; gap: 10px; }
+.account-loading { width: 96px; height: 36px; border-radius: 999px; background: var(--surface-raised); }
 .account-profile { display: flex; align-items: center; gap: 8px; }
 .account-profile .avatar { width: 36px; height: 36px; }
 .account-copy { display: grid; text-align: right; line-height: 1.2; }

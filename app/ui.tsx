@@ -1,10 +1,8 @@
 import Link from "next/link";
 import type { Match, Player } from "../db/site-data";
 import { playerTierLabel } from "../lib/player-tiers";
-import { getCurrentUser } from "./auth";
-import { signOut } from "./auth/actions";
 import { PlayerAvatar, PlayerPositions } from "./player-ui";
-import { roleLabels } from "./roles";
+import { AccountMenu } from "./session-ui";
 
 export { PlayerAvatar, PlayerPositions } from "./player-ui";
 
@@ -16,9 +14,7 @@ const nav = [
   ["profile", "/profile", "내 프로필"],
 ] as const;
 
-export async function PageShell({ active, children }: { active: string; children: React.ReactNode }) {
-  const user = await getCurrentUser();
-  const role = user?.role ?? null;
+export function PageShell({ active, children }: { active: string; children: React.ReactNode }) {
   return (
     <>
       <header className="site-header">
@@ -27,9 +23,7 @@ export async function PageShell({ active, children }: { active: string; children
           {nav.map(([key, href, label]) => <Link className={active === key ? "active" : ""} href={href} key={key}>{label}</Link>)}
         </nav>
         <div className="account">
-          {user && role && <div className="account-profile"><PlayerAvatar player={{ nickname: user.displayName, thumbnailKey: user.thumbnailKey }} /><div className="account-copy"><strong>{user.displayName}</strong><span>{roleLabels[role]}</span></div></div>}
-          {user && role !== "user" && <Link className="admin-access-link" href="/admin/members">멤버 관리</Link>}
-          {user ? <form action={signOut}><button className="account-link" type="submit">로그아웃</button></form> : <Link className="account-link" href="/login">로그인</Link>}
+          <AccountMenu />
         </div>
       </header>
       <main className="page-wrap">{children}</main>

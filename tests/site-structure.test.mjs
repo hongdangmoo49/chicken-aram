@@ -56,7 +56,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("app/globals.css", root), "utf8"),
   ]);
   assert.match(design, /Responsive Rules/);
-  assert.match(tiers, /TierDragBoard admin=\{admin\}/);
+  assert.match(tiers, /TierDragBoard players=\{players\}/);
   assert.match(tierDragBoard, /tier-player-card/);
   assert.match(tierDragBoard, /player\.wins.*승.*player\.losses.*패/);
   assert.match(tierDragBoard, /PlayerAvatar/);
@@ -116,9 +116,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(membersPage, /role === "super_admin"/);
   assert.match(memberRoleEditor, /변경사항 저장/);
   assert.match(memberRoleEditor, /fetch\("\/api\/admin\/role"/);
-  assert.match(ui, /role !== "user"/);
-  assert.match(ui, /\/admin\/members/);
-  assert.match(ui, /PlayerAvatar player=/);
+  assert.match(ui, /AccountMenu/);
   assert.match(auth, /cache\(async/);
   assert.match(auth, /getClaims\(\)/);
   assert.match(auth, /display_name,role,players\(thumbnail_path\)/);
@@ -133,7 +131,6 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(siteData, /unstable_cache/);
   assert.match(siteData, /const CACHE_SECONDS = 300/);
   assert.match(siteData, /createSupabasePublicClient/);
-  assert.match(roles, /super_admin/);
   assert.doesNotMatch(roles, /getRole|isAdmin|isSuperAdmin/);
   assert.match(nicknameRoute, /이미 사용 중인 닉네임/);
   assert.match(nicknameRoute, /redirectWithToast/);

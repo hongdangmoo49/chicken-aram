@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getMatchCounts, getMatches, getPlayers } from "../db/site-data";
 import { MatchCard, PageShell, PlayerRow, SectionHeading } from "./ui";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export default async function Home() {
   const [players, upcoming, recent, matchCounts] = await Promise.all([

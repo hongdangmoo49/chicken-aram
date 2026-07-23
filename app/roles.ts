@@ -1,18 +1,13 @@
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
+import type { AppRole } from "../lib/app-roles";
 import type { MemberRoleChange } from "../lib/member-roles";
 
-export type AppRole = "user" | "admin" | "super_admin";
+export type { AppRole } from "../lib/app-roles";
 
 export type Member = {
   id: string;
   displayName: string;
   role: AppRole;
-};
-
-export const roleLabels: Record<AppRole, string> = {
-  user: "일반 사용자",
-  admin: "관리자",
-  super_admin: "슈퍼 관리자",
 };
 
 export async function getMembers(): Promise<Member[]> {

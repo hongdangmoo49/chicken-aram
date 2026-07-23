@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { siteUrl } from "../lib/site-url";
 import "./globals.css";
+import { SessionProvider } from "./session-ui";
 import { Toast } from "./toast";
 
 export function generateMetadata(): Metadata {
@@ -20,7 +21,7 @@ export function generateMetadata(): Metadata {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body><Suspense><Toast /></Suspense>{children}</body>
+      <body><SessionProvider><Suspense><Toast /></Suspense>{children}</SessionProvider></body>
     </html>
   );
 }

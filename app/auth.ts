@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../lib/supabase/server";
-import type { AppRole } from "./roles";
+import type { AppRole } from "../lib/app-roles";
 
 export type AppUser = {
   id: string;

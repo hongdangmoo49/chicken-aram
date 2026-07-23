@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { EditableRole, MemberRoleChange } from "../../../lib/member-roles";
-import type { AppRole, Member } from "../../roles";
+import type { AppRole } from "../../../lib/app-roles";
+import type { Member } from "../../roles";
 
 const roleLabels: Record<AppRole, string> = {
   user: "일반 사용자",

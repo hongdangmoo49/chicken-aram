@@ -4,6 +4,7 @@ import { useMemo, useState, type DragEvent } from "react";
 import type { Player } from "../../db/site-data";
 import { playerTierLabel, playerTiers } from "../../lib/player-tiers";
 import { PlayerAvatar, PlayerPositions } from "../player-ui";
+import { useSession } from "../session-ui";
 
 type Arrangement = Record<number, number[]>;
 
@@ -19,7 +20,9 @@ function placement(arrangement: Arrangement, playerId: number) {
   return null;
 }
 
-export function TierDragBoard({ players, admin }: { players: Player[]; admin: boolean }) {
+export function TierDragBoard({ players }: { players: Player[] }) {
+  const { user } = useSession();
+  const admin = Boolean(user && user.role !== "user");
   const baseline = useMemo(() => arrange(players), [players]);
   const [arrangement, setArrangement] = useState<Arrangement>(() => baseline);
   const [draggingId, setDraggingId] = useState<number | null>(null);
