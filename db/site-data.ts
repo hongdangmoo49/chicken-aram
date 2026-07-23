@@ -119,20 +119,6 @@ export async function createBalancedSchedule(input: {
   const { teamA, teamB } = balanceTeams(selected, input.separatedGroups);
   const admin = createSupabaseAdminClient();
 
-  const { data: match, error: matchError } = await admin
-    .from("matches")
-    .insert({
-      scheduled_at: input.scheduledAt,
-      map: input.map,
-      status: "scheduled",
-      team_a: teamA.map((player) => player.nickname),
-      team_b: teamB.map((player) => player.nickname),
-      created_by: input.createdBy,
-    })
-    .select("id")
-    .single();
-  if (matchError || !match) fail("대전 일정 생성 실패", matchError);
-
   const groupByPlayer = new Map(
     input.separatedGroups.flatMap((group, index) =>
       group.map((id) => [id, index + 1] as const),
@@ -142,16 +128,17 @@ export async function createBalancedSchedule(input: {
     ...teamA.map((player) => ({ player, team: "A" as const })),
     ...teamB.map((player) => ({ player, team: "B" as const })),
   ].map(({ player, team }) => ({
-    match_id: match.id,
     player_id: player.id,
     team,
     separated_group: groupByPlayer.get(player.id) ?? null,
   }));
-  const { error: playerError } = await admin.from("match_players").insert(rows);
-  if (playerError) {
-    await admin.from("matches").delete().eq("id", match.id);
-    fail("대전 참가자 저장 실패", playerError);
-  }
+  const { error } = await admin.rpc("create_balanced_schedule", {
+    p_scheduled_at: input.scheduledAt,
+    p_map: input.map,
+    p_created_by: input.createdBy,
+    p_assignments: rows.map((row) => ({ playerId: row.player_id, team: row.team, separatedGroup: row.separated_group })),
+  });
+  if (error) fail("대전 일정 생성 실패", error);
 }
 
 export async function updateScheduledMatch(id: number, scheduledAt: string, map: string) {
