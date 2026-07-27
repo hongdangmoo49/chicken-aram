@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { createContext, useContext, useEffect, useState } from "react";
 import { roleLabels, type AppRole } from "../lib/app-roles";
 import { signOut } from "./auth/actions";
@@ -15,6 +16,7 @@ type SessionUser = {
 const SessionContext = createContext<{ loading: boolean; user: SessionUser | null } | null>(null);
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [session, setSession] = useState<{ loading: boolean; user: SessionUser | null }>({ loading: true, user: null });
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setSession({ loading: false, user: null });
       });
     return () => controller.abort();
-  }, []);
+  }, [pathname]);
 
   return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
 }

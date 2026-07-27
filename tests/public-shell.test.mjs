@@ -22,6 +22,8 @@ test("keeps public pages cacheable and loads account controls separately", async
   assert.match(shell, /<AccountMenu \/>/);
   assert.doesNotMatch(shell, /getCurrentUser/);
   assert.match(sessionUi, /fetch\("\/api\/session"/);
+  assert.match(sessionUi, /usePathname\(\)/);
+  assert.match(sessionUi, /\}, \[pathname\]\);/);
   assert.match(sessionUi, /AdminOnly/);
   assert.match(sessionRoute, /private, no-store/);
 });
