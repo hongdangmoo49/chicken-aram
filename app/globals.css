@@ -249,8 +249,16 @@ button, input, select { font: inherit; }
 .member-row:last-child { border-bottom: 0; }
 .member-row > div { display: grid; gap: 4px; }
 .member-row > div span { color: var(--muted); font-size: 11px; }
+.member-row > .member-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: start; gap: 8px; }
 .member-row select { min-width: 160px; min-height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #0e1116; color: var(--text); }
 .role-badge { padding: 7px 10px; border: 1px solid #9f5626; border-radius: 999px; color: var(--accent); font-size: 11px; font-weight: 800; }
+.member-delete { min-width: 110px; }
+.member-delete[open] { flex-basis: 100%; }
+.member-delete summary { padding: 9px 11px; border: 1px solid #7d3434; border-radius: 8px; color: #ffb0a8; font-size: 12px; font-weight: 750; text-align: center; cursor: pointer; }
+.member-delete form { display: grid; gap: 9px; width: 340px; margin: 10px 0 0 auto; padding: 14px; border: 1px solid #7d3434; border-radius: 10px; background: #0e1116; }
+.member-delete p { margin: 0; color: var(--muted); font-size: 11px; }
+.member-delete label { color: var(--muted); font-size: 11px; font-weight: 700; }
+.member-delete input { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); }
 .permission-note { padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 13px; }
 .permission-note strong { display: block; margin-bottom: 4px; color: var(--text); }
 .admin-subnav { display: flex; justify-content: flex-end; margin: -18px 0 18px; }
@@ -310,7 +318,9 @@ button, input, select { font: inherit; }
   .member-heading { display: grid; }
   .audit-entry > header { display: grid; }
   .member-row { grid-template-columns: 1fr; padding: 14px 0; }
+  .member-row > .member-controls { justify-content: stretch; }
   .member-row select { width: 100%; }
+  .member-delete, .member-delete form { width: 100%; }
   .page-wrap { width: min(100% - 32px, 760px); padding-top: 44px; }
   .hero { grid-template-columns: 1fr; gap: 40px; min-height: 0; }
   .hero-visual { min-height: 580px; }

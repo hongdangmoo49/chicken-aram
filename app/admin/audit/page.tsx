@@ -11,6 +11,7 @@ export const metadata = { title: "변경 기록" };
 const actionLabels: Record<string, string> = {
   "players.rank.update": "선수 티어·순서 변경",
   "members.role.update": "멤버 권한 변경",
+  "members.account.delete": "멤버 로그인 계정 삭제",
   "matches.result.save": "대전 결과 저장",
 };
 

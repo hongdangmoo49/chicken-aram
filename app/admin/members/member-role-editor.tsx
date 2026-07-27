@@ -11,7 +11,7 @@ const roleLabels: Record<AppRole, string> = {
   super_admin: "슈퍼 관리자",
 };
 
-export function MemberRoleEditor({ members, canManageRoles }: { members: Member[]; canManageRoles: boolean }) {
+export function MemberRoleEditor({ members, canManageRoles, currentUserId }: { members: Member[]; canManageRoles: boolean; currentUserId: string }) {
   const baseline = useMemo(() => Object.fromEntries(members.filter((member) => member.role !== "super_admin").map((member) => [member.id, member.role as EditableRole])), [members]);
   const [roles, setRoles] = useState<Record<string, EditableRole>>(() => baseline);
   const [saving, setSaving] = useState(false);
@@ -34,10 +34,24 @@ export function MemberRoleEditor({ members, canManageRoles }: { members: Member[
   return <>
     {canManageRoles && <div className="member-save-bar"><span><strong>{changes.length}</strong>명 권한 변경 대기</span><div><button className="button ghost" disabled={!changes.length || saving} onClick={() => { setRoles(baseline); setMessage("변경사항을 초기화했습니다."); }} type="button">초기화</button><button className="button primary" disabled={!changes.length || saving} onClick={saveChanges} type="button">{saving ? "저장 중..." : "변경사항 저장"}</button></div></div>}
     <div className="member-list">
-      {members.map((member) => <div className="member-row" key={member.id}>
-        <div><strong>{member.displayName}</strong><span>{roleLabels[member.role]}</span></div>
-        {canManageRoles && member.role !== "super_admin" ? <select aria-label={`${member.displayName} 권한`} disabled={saving} onChange={(event) => setRoles((current) => ({ ...current, [member.id]: event.target.value as EditableRole }))} value={roles[member.id]}><option value="user">일반 사용자</option><option value="admin">관리자</option></select> : <span className="role-badge">{roleLabels[member.role]}</span>}
-      </div>)}
+      {members.map((member) => {
+        const canDelete = canManageRoles && member.id !== currentUserId && member.role !== "super_admin" && member.email;
+        return <div className="member-row" key={member.id}>
+          <div><strong>{member.displayName}</strong>{member.email && <span>{member.email}</span>}<span>{roleLabels[member.role]}</span></div>
+          <div className="member-controls">
+            {canManageRoles && member.role !== "super_admin" ? <select aria-label={`${member.displayName} 권한`} disabled={saving} onChange={(event) => setRoles((current) => ({ ...current, [member.id]: event.target.value as EditableRole }))} value={roles[member.id]}><option value="user">일반 사용자</option><option value="admin">관리자</option></select> : <span className="role-badge">{roleLabels[member.role]}</span>}
+            {canDelete && <details className="member-delete">
+              <summary>계정 삭제</summary>
+              <form action={`/api/admin/member/${member.id}`} method="post">
+                <p>로그인 계정만 삭제되며 선수·경기 기록은 유지됩니다.</p>
+                <label htmlFor={`delete-email-${member.id}`}>삭제 확인 이메일</label>
+                <input autoComplete="off" id={`delete-email-${member.id}`} name="confirmationEmail" placeholder={member.email ?? ""} required type="email" />
+                <button className="button danger" type="submit">로그인 계정 삭제</button>
+              </form>
+            </details>}
+          </div>
+        </div>;
+      })}
     </div>
     <p className="sr-status" aria-live="polite" role="status">{message}</p>
   </>;

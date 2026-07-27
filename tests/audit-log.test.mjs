@@ -5,13 +5,16 @@ import test from "node:test";
 const root = new URL("../", import.meta.url);
 
 test("admin mutations write actor-aware audit logs", async () => {
-  const [migration, cleanupMigration, roles, tierRoute, resultRoute, auditPage] = await Promise.all([
+  const [migration, cleanupMigration, roles, tierRoute, resultRoute, auditPage, memberDeleteRoute, memberEditor, membersPage] = await Promise.all([
     readFile(new URL("supabase/migrations/202607230021_admin_audit_logs.sql", root), "utf8"),
     readFile(new URL("supabase/migrations/202607270022_drop_legacy_admin_rpcs.sql", root), "utf8"),
     readFile(new URL("app/roles.ts", root), "utf8"),
     readFile(new URL("app/api/admin/player-tier/route.ts", root), "utf8"),
     readFile(new URL("app/api/results/[id]/route.ts", root), "utf8"),
     readFile(new URL("app/admin/audit/page.tsx", root), "utf8"),
+    readFile(new URL("app/api/admin/member/[id]/route.ts", root), "utf8"),
+    readFile(new URL("app/admin/members/member-role-editor.tsx", root), "utf8"),
+    readFile(new URL("app/admin/members/page.tsx", root), "utf8"),
   ]);
 
   assert.match(migration, /create table public\.audit_logs/);
@@ -27,4 +30,11 @@ test("admin mutations write actor-aware audit logs", async () => {
   assert.match(resultRoute, /actorId: user\.id/);
   assert.match(auditPage, /requireCurrentUser\("\/admin\/audit"\)/);
   assert.match(auditPage, /변경 전후 값 보기/);
+  assert.match(memberDeleteRoute, /user\.role !== "super_admin"/);
+  assert.match(memberDeleteRoute, /validateMemberAccountDeletion/);
+  assert.match(memberDeleteRoute, /auth\.admin\.deleteUser\(targetId\)/);
+  assert.match(memberDeleteRoute, /members\.account\.delete/);
+  assert.match(memberEditor, /name="confirmationEmail"/);
+  assert.match(memberEditor, /로그인 계정만 삭제되며 선수·경기 기록은 유지됩니다/);
+  assert.match(membersPage, /getMembers\(canManageRoles\)/);
 });
