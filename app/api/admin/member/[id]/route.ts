@@ -1,3 +1,4 @@
+import { revalidateTag } from "next/cache";
 import type { AppRole } from "../../../../../lib/app-roles";
 import { isMemberUserId, validateMemberAccountDeletion } from "../../../../../lib/member-roles";
 import { reportError } from "../../../../../lib/observability";
@@ -38,11 +39,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (validationError === "protected") return redirectWithToast(request, "/admin/members", "error", "슈퍼 관리자 계정은 삭제할 수 없습니다.");
   if (validationError === "email") return redirectWithToast(request, "/admin/members", "error", "삭제 확인 이메일이 일치하지 않습니다.");
 
+  if (profile.player_id !== null) {
+    const { error: deactivateError } = await admin.from("players").update({ is_active: false }).eq("id", profile.player_id);
+    if (deactivateError) {
+      const errorId = reportError("member.player.deactivate", deactivateError, { targetId });
+      return redirectWithToast(request, "/admin/members", "error", `선수를 비활성화하지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);
+    }
+  }
+
   const { error: deleteError } = await admin.auth.admin.deleteUser(targetId);
   if (deleteError) {
+    if (profile.player_id !== null) {
+      const { error: rollbackError } = await admin.from("players").update({ is_active: true }).eq("id", profile.player_id);
+      if (rollbackError) reportError("member.player.deactivate.rollback", rollbackError, { targetId });
+    }
     const errorId = reportError("member.account.delete", deleteError, { targetId });
     return redirectWithToast(request, "/admin/members", "error", `멤버 계정을 삭제하지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);
   }
+  revalidateTag("players", { expire: 0 });
 
   const { error: auditError } = await admin.from("audit_logs").insert({
     actor_id: user.id,

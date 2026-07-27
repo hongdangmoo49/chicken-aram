@@ -58,7 +58,8 @@ async function loadPlayers(): Promise<Player[]> {
   const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("players")
-    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions,tier_order");
+    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions,tier_order")
+    .eq("is_active", true);
   if (error) fail("선수 목록 조회 실패", error);
 
   return (data ?? [])
