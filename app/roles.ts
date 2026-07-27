@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import type { AppRole } from "../lib/app-roles";
 import type { MemberRoleChange } from "../lib/member-roles";
+import { calculateRoundRecord, formatRecentMatchRecord, type PlayerMatchResult, type PlayerRoundResult } from "../lib/player-records";
 
 export type { AppRole } from "../lib/app-roles";
 
@@ -9,6 +10,13 @@ export type Member = {
   displayName: string;
   email: string | null;
   role: AppRole;
+  record: {
+    roundWins: number;
+    roundLosses: number;
+    matchWins: number;
+    matchLosses: number;
+    recentMatches: string;
+  } | null;
 };
 
 export type AuditLog = {
@@ -23,11 +31,32 @@ export type AuditLog = {
 
 export async function getMembers(includeEmails = false): Promise<Member[]> {
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from("profiles")
-    .select("id,display_name,role")
-    .order("created_at");
-  if (error) throw new Error(`멤버 목록 조회 실패: ${error.message}`);
+  // ponytail: 개인 리그의 라운드 참가 기록은 1,000건 미만. 넘으면 DB 집계 RPC로 바꾼다.
+  const [{ data, error }, { data: roundResults, error: roundError }] = await Promise.all([
+    admin.from("profiles").select("id,display_name,role,player_id,players(wins,losses)").order("created_at"),
+    admin.from("match_players").select("player_id,team,matches!inner(a_score,b_score,status,winner,played_at)").eq("matches.status", "completed"),
+  ]);
+  if (error || roundError) throw new Error(`멤버 목록 조회 실패: ${error?.message ?? roundError?.message}`);
+
+  const roundsByPlayerId = new Map<number, PlayerRoundResult[]>();
+  const matchesByPlayerId = new Map<number, PlayerMatchResult[]>();
+  for (const result of roundResults ?? []) {
+    const match = result.matches as unknown as { a_score: number; b_score: number; winner: string | null; played_at: string | null };
+    const playerId = Number(result.player_id);
+    const team = result.team as PlayerRoundResult["team"];
+    const rounds = roundsByPlayerId.get(playerId) ?? [];
+    rounds.push({
+      team,
+      aScore: Number(match.a_score),
+      bScore: Number(match.b_score),
+    });
+    roundsByPlayerId.set(playerId, rounds);
+    if ((match.winner === "A" || match.winner === "B") && match.played_at) {
+      const matches = matchesByPlayerId.get(playerId) ?? [];
+      matches.push({ team, winner: match.winner, playedAt: match.played_at });
+      matchesByPlayerId.set(playerId, matches);
+    }
+  }
 
   const emailById = new Map<string, string>();
   if (includeEmails) {
@@ -39,12 +68,22 @@ export async function getMembers(includeEmails = false): Promise<Member[]> {
     }
   }
 
-  return (data ?? []).map((member) => ({
-    id: member.id,
-    displayName: member.display_name || "이름 없음",
-    email: emailById.get(member.id) ?? null,
-    role: member.role as AppRole,
-  }));
+  return (data ?? []).map((member) => {
+    const player = member.players as unknown as { wins: number; losses: number } | null;
+    const playerId = member.player_id === null ? null : Number(member.player_id);
+    return {
+      id: member.id,
+      displayName: member.display_name || "이름 없음",
+      email: emailById.get(member.id) ?? null,
+      role: member.role as AppRole,
+      record: player && playerId !== null ? {
+        ...calculateRoundRecord(roundsByPlayerId.get(playerId) ?? []),
+        matchWins: Number(player.wins),
+        matchLosses: Number(player.losses),
+        recentMatches: formatRecentMatchRecord(matchesByPlayerId.get(playerId) ?? []),
+      } : null,
+    };
+  });
 }
 
 export async function setMemberRoles(changes: MemberRoleChange[], actorId: string) {

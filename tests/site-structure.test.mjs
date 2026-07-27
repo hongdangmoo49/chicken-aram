@@ -116,6 +116,9 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(membersPage, /role === "super_admin"/);
   assert.match(memberRoleEditor, /변경사항 저장/);
   assert.match(memberRoleEditor, /fetch\("\/api\/admin\/role"/);
+  assert.match(memberRoleEditor, /라운드.*roundWins.*roundLosses.*승률/);
+  assert.match(memberRoleEditor, /경기.*matchWins.*matchLosses.*승률/);
+  assert.match(memberRoleEditor, /최근 5경기.*recentMatches/);
   assert.match(ui, /AccountMenu/);
   assert.match(auth, /cache\(async/);
   assert.match(auth, /getClaims\(\)/);
@@ -132,6 +135,9 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(siteData, /const CACHE_SECONDS = 300/);
   assert.match(siteData, /createSupabasePublicClient/);
   assert.doesNotMatch(roles, /getRole|isAdmin|isSuperAdmin/);
+  assert.match(roles, /players\(wins,losses\)/);
+  assert.match(roles, /calculateRoundRecord/);
+  assert.match(roles, /formatRecentMatchRecord/);
   assert.match(nicknameRoute, /이미 사용 중인 닉네임/);
   assert.match(nicknameRoute, /redirectWithToast/);
   assert.match(thumbnailRoute, /redirectWithToast/);

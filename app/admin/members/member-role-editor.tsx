@@ -11,6 +11,8 @@ const roleLabels: Record<AppRole, string> = {
   super_admin: "슈퍼 관리자",
 };
 
+const rate = (wins: number, losses: number) => wins + losses ? Math.round(wins / (wins + losses) * 100) : 0;
+
 export function MemberRoleEditor({ members, canManageRoles, currentUserId }: { members: Member[]; canManageRoles: boolean; currentUserId: string }) {
   const baseline = useMemo(() => Object.fromEntries(members.filter((member) => member.role !== "super_admin").map((member) => [member.id, member.role as EditableRole])), [members]);
   const [roles, setRoles] = useState<Record<string, EditableRole>>(() => baseline);
@@ -37,7 +39,11 @@ export function MemberRoleEditor({ members, canManageRoles, currentUserId }: { m
       {members.map((member) => {
         const canDelete = canManageRoles && member.id !== currentUserId && member.role !== "super_admin" && member.email;
         return <div className="member-row" key={member.id}>
-          <div><strong>{member.displayName}</strong>{member.email && <span>{member.email}</span>}<span>{roleLabels[member.role]}</span></div>
+          <div><strong>{member.displayName}</strong>{member.email && <span>{member.email}</span>}<span>{roleLabels[member.role]}</span>{member.record && <div className="member-records">
+            <span>라운드 <strong>{member.record.roundWins}승 {member.record.roundLosses}패 · 승률 {rate(member.record.roundWins, member.record.roundLosses)}%</strong></span>
+            <span>경기 <strong>{member.record.matchWins}승 {member.record.matchLosses}패 · 승률 {rate(member.record.matchWins, member.record.matchLosses)}%</strong></span>
+            <span>최근 5경기 <strong>{member.record.recentMatches}</strong></span>
+          </div>}</div>
           <div className="member-controls">
             {canManageRoles && member.role !== "super_admin" ? <select aria-label={`${member.displayName} 권한`} disabled={saving} onChange={(event) => setRoles((current) => ({ ...current, [member.id]: event.target.value as EditableRole }))} value={roles[member.id]}><option value="user">일반 사용자</option><option value="admin">관리자</option></select> : <span className="role-badge">{roleLabels[member.role]}</span>}
             {canDelete && <details className="member-delete">
