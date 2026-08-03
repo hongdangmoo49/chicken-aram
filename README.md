@@ -2,6 +2,14 @@
 
 증강 칼바람 내전의 대전 일정, 결과, 선수 티어를 기록하는 반응형 웹사이트입니다. Vercel에서 실행되는 Next.js 앱이며, 회원가입·DB·선수 썸네일은 Supabase를 사용합니다.
 
+[서비스 바로가기](https://chicken-aram.vercel.app)
+
+## 핵심 기능
+
+- Supabase Authentication·RLS·Storage 기반 회원 및 역할별 권한 관리
+- 일정 생성 트랜잭션, 요청 속도 제한, 관리자 변경 감사 로그
+- Next.js 16·React 19 기반 반응형 UI와 단위·통합·Playwright E2E 검증
+
 ## 로컬 실행
 
 ```bash
