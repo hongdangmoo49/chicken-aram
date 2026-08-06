@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return redirectWithToast(request, "/profile", "error", "3MB 이하의 JPG, PNG, WebP 파일만 사용할 수 있습니다.");
   }
 
-  let normalizedImage: Buffer;
+  let normalizedImage: ArrayBuffer;
   try {
     normalizedImage = await normalizePlayerThumbnail(Buffer.from(await file.arrayBuffer()));
   } catch {

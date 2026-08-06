@@ -6,7 +6,8 @@ import { normalizePlayerThumbnail } from "../lib/player-thumbnail.ts";
 test("decodes and re-encodes real thumbnail pixels", async () => {
   const source = await sharp({ create: { width: 16, height: 8, channels: 3, background: "#ff7d2a" } }).png().toBuffer();
   const output = await normalizePlayerThumbnail(source);
-  const metadata = await sharp(output).metadata();
+  assert.ok(output instanceof ArrayBuffer);
+  const metadata = await sharp(Buffer.from(output)).metadata();
   assert.equal(metadata.format, "webp");
   assert.equal(metadata.width, 512);
   assert.equal(metadata.height, 512);
