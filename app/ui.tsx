@@ -35,8 +35,8 @@ export function SectionHeading({ kicker, title, href }: { kicker: string; title:
   return <div className="section-heading"><div><p>{kicker}</p><h2>{title}</h2></div><Link href={href}>전체 보기 →</Link></div>;
 }
 
-export function PlayerRow({ player, rank, winRate }: { player: Player; rank: number; winRate: number }) {
-  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="player-tags"><span className="tier-pill">{playerTierLabel(player.tier)}</span><PlayerPositions positions={player.positions} /></span><span className="win-rate">{winRate}%</span></div>;
+export function PlayerRow({ player, rank, points }: { player: Player; rank: number; points: number }) {
+  return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="player-tags"><span className="tier-pill">{playerTierLabel(player.tier)}</span><PlayerPositions positions={player.positions} /></span><span className="win-rate">{points}점</span></div>;
 }
 
 export function MatchCard({ match, featured = false, compact = false }: { match: Match; featured?: boolean; compact?: boolean }) {

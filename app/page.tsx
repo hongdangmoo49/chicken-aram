@@ -12,18 +12,13 @@ export default async function Home() {
     getMatches({ status: "completed", limit: 3 }),
     getMatchCounts(),
   ]);
-  const winRate = (player: (typeof players)[number]) =>
-    player.wins + player.losses === 0
-      ? 0
-      : Math.round((player.wins / (player.wins + player.losses)) * 100);
-
   return (
     <PageShell active="home">
       <section className="hero">
         <div className="hero-copy">
           <span className="eyebrow">CHICKEN ARAM · SEASON 01</span>
           <h1>ㅊㅈ? ㅊㅈ!</h1>
-          <p>예정된 매치부터 결과, 선수 티어와 승률까지. 증강 칼바람 내전의 공식 기록실입니다.</p>
+          <p>예정된 매치부터 결과, 선수 티어와 점수까지. 증강 칼바람 내전의 공식 기록실입니다.</p>
           <div className="hero-actions">
             <Link className="button primary" href="/schedule">다음 대전 보기 <span>→</span></Link>
             <Link className="button ghost" href="/tiers">티어표 확인</Link>
@@ -53,7 +48,7 @@ export default async function Home() {
           <SectionHeading kicker="POWER RANKING" title="현재 상위 선수" href="/tiers" />
           <div className="ranking-list">
             {players.slice(0, 5).map((player, index) => (
-              <PlayerRow key={player.id} player={player} rank={index + 1} winRate={winRate(player)} />
+              <PlayerRow key={player.id} player={player} rank={index + 1} points={player.points} />
             ))}
           </div>
         </section>

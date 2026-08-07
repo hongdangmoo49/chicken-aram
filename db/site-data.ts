@@ -5,7 +5,7 @@ import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-pos
 import { coachTier, type PlayerTierChange } from "../lib/player-tiers";
 import type { MatchResultInput, MatchWinner } from "../lib/match-results";
 import { calculateRoundRecord } from "../lib/player-records";
-import { balanceTeams } from "./team-balance";
+import { balanceTeams, playerMatchPoints } from "./team-balance";
 
 export type Player = {
   id: number;
@@ -13,6 +13,7 @@ export type Player = {
   tier: number;
   wins: number;
   losses: number;
+  points: number;
   thumbnailKey: string | null;
   positions: PlayerPosition[];
   tierOrder: number | null;
@@ -69,18 +70,16 @@ async function loadPlayers(): Promise<Player[]> {
       tier: player.tier,
       wins: player.wins,
       losses: player.losses,
+      points: playerMatchPoints(player),
       thumbnailKey: player.thumbnail_path,
       positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
       tierOrder: player.tier_order,
     }))
     .sort((a, b) => {
       if (a.tier !== b.tier) return a.tier - b.tier;
+      if (a.points !== b.points) return b.points - a.points;
       if (a.tierOrder !== null || b.tierOrder !== null) return (a.tierOrder ?? Number.MAX_SAFE_INTEGER) - (b.tierOrder ?? Number.MAX_SAFE_INTEGER);
-      const aGames = a.wins + a.losses;
-      const bGames = b.wins + b.losses;
-      const aRate = aGames ? a.wins / aGames : 0;
-      const bRate = bGames ? b.wins / bGames : 0;
-      return bRate - aRate || b.wins - a.wins;
+      return b.wins - a.wins;
     });
 }
 
@@ -264,6 +263,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
     tier: player.tier,
     wins: player.wins,
     losses: player.losses,
+    points: playerMatchPoints(player),
     thumbnailKey: player.thumbnail_path,
     positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
     tierOrder: player.tier_order,

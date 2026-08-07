@@ -62,7 +62,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(tierDragBoard, /PlayerAvatar/);
   assert.match(tierDragBoard, /draggable=\{admin\}/);
   assert.match(tierDragBoard, /handleDrop/);
-  assert.match(tierDragBoard, /dropTarget/);
+  assert.match(tierDragBoard, /player\.points.*점/);
   assert.match(tierDragBoard, /변경사항 저장/);
   assert.match(tierDragBoard, /fetch\("\/api\/admin\/player-tier"/);
   assert.match(schedule, /user\.role === "user"/);

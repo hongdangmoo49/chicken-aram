@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { balanceTeams } from "../db/team-balance.ts";
+import { balanceTeams, playerMatchPoints, playerPower } from "../db/team-balance.ts";
+
+test("uses three points per win and minus one per loss", () => {
+  assert.equal(playerMatchPoints({ wins: 4, losses: 2 }), 10);
+  assert.equal(playerMatchPoints({ wins: 0, losses: 3 }), -3);
+  assert.equal(playerPower({ id: 1, nickname: "P1", tier: 3, wins: 4, losses: 2 }), 210);
+});
 
 test("balances ten players while separating a requested pair", () => {
   const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: (index % 5) + 1, wins: 10, losses: 10 }));

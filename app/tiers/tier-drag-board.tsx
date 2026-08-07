@@ -9,7 +9,7 @@ import { useSession } from "../session-ui";
 type Arrangement = Record<number, number[]>;
 
 function arrange(players: Player[]): Arrangement {
-  return Object.fromEntries(playerTiers.map((tier) => [tier, players.filter((player) => player.tier === tier).map((player) => player.id)]));
+  return Object.fromEntries(playerTiers.map((tier) => [tier, players.filter((player) => player.tier === tier).sort((a, b) => b.points - a.points).map((player) => player.id)]));
 }
 
 function placement(arrangement: Arrangement, playerId: number) {
@@ -27,10 +27,8 @@ export function TierDragBoard({ players }: { players: Player[] }) {
   const [arrangement, setArrangement] = useState<Arrangement>(() => baseline);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [overTier, setOverTier] = useState<number | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ playerId: number; after: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const rate = (player: Player) => player.wins + player.losses === 0 ? 0 : Math.round((player.wins / (player.wins + player.losses)) * 100);
   const changes = playerTiers.flatMap((tier) => arrangement[tier].map((playerId, order) => ({ playerId, tier, order })));
   const pendingCount = changes.filter((change) => {
     const original = placement(baseline, change.playerId);
@@ -40,20 +38,17 @@ export function TierDragBoard({ players }: { players: Player[] }) {
   function clearDrag() {
     setDraggingId(null);
     setOverTier(null);
-    setDropTarget(null);
   }
 
-  function movePlayer(playerId: number, tier: number, targetId?: number, after = false) {
-    if (playerId === targetId) return clearDrag();
+  function movePlayer(playerId: number, tier: number) {
     setArrangement((current) => {
       const next = Object.fromEntries(playerTiers.map((value) => [value, current[value].filter((id) => id !== playerId)])) as Arrangement;
-      const target = next[tier];
-      const targetIndex = targetId ? target.indexOf(targetId) : -1;
-      target.splice(targetIndex < 0 ? target.length : targetIndex + (after ? 1 : 0), 0, playerId);
+      next[tier].push(playerId);
+      next[tier].sort((a, b) => (players.find((player) => player.id === b)?.points ?? 0) - (players.find((player) => player.id === a)?.points ?? 0));
       return next;
     });
     const player = players.find((item) => item.id === playerId);
-    setMessage(`${player?.nickname ?? "선수"}의 ${playerTierLabel(tier)} 내 위치를 임시 변경했습니다.`);
+    setMessage(`${player?.nickname ?? "선수"}의 티어를 ${playerTierLabel(tier)}로 임시 변경했습니다.`);
     clearDrag();
   }
 
@@ -70,20 +65,13 @@ export function TierDragBoard({ players }: { players: Player[] }) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     setOverTier(tier);
-    const card = (event.target as HTMLElement).closest<HTMLElement>("[data-player-id]");
-    const playerId = Number(card?.dataset.playerId);
-    if (!card || playerId === draggingId) return setDropTarget(null);
-    const rect = card.getBoundingClientRect();
-    const y = event.clientY - (rect.top + rect.height / 2);
-    const after = Math.abs(y) > rect.height / 4 ? y > 0 : event.clientX > rect.left + rect.width / 2;
-    setDropTarget((current) => current?.playerId === playerId && current.after === after ? current : { playerId, after });
   }
 
   function handleDrop(event: DragEvent<HTMLElement>, tier: number) {
     event.preventDefault();
     const playerId = Number(event.dataTransfer.getData("text/plain"));
     if (!Number.isInteger(playerId)) return clearDrag();
-    movePlayer(playerId, tier, dropTarget?.playerId, dropTarget?.after);
+    movePlayer(playerId, tier);
   }
 
   async function saveChanges() {
@@ -104,10 +92,10 @@ export function TierDragBoard({ players }: { players: Player[] }) {
     <div className="tier-board">
       {playerTiers.map((tier) => {
         const tierPlayers = arrangement[tier].map((id) => players.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
-        return <section className={`tier-section tier-${tier}`} data-tier={tier} key={tier} onDragOver={(event) => handleDragOver(event, tier)} onDrop={(event) => handleDrop(event, tier)}><div className="tier-label"><div><strong>{playerTierLabel(tier)}</strong><span>{tierPlayers.length} PLAYERS</span></div></div><div className="tier-players">{tierPlayers.map((player) => <article className={`tier-player-card${draggingId === player.id ? " dragging" : ""}${dropTarget?.playerId === player.id ? dropTarget.after ? " drop-after" : " drop-before" : ""}`} data-player-id={player.id} draggable={admin} key={player.id} onDragEnd={clearDrag} onDragStart={(event) => handleDragStart(event, player)} title={admin ? "원하는 티어와 순서로 드래그" : undefined}>
+        return <section className={`tier-section tier-${tier}`} data-tier={tier} key={tier} onDragOver={(event) => handleDragOver(event, tier)} onDrop={(event) => handleDrop(event, tier)}><div className="tier-label"><div><strong>{playerTierLabel(tier)}</strong><span>{tierPlayers.length} PLAYERS</span></div></div><div className="tier-players">{tierPlayers.map((player) => <article className={`tier-player-card${draggingId === player.id ? " dragging" : ""}`} data-player-id={player.id} draggable={admin} key={player.id} onDragEnd={clearDrag} onDragStart={(event) => handleDragStart(event, player)} title={admin ? "원하는 티어로 드래그" : undefined}>
           <PlayerAvatar player={player} />
           <div className="tier-player-info"><strong>{player.nickname}</strong><span>{player.wins}승 {player.losses}패</span><PlayerPositions positions={player.positions} /></div>
-          <div className="tier-player-rate"><strong>{rate(player)}%</strong><span>승률</span></div>
+          <div className="tier-player-rate"><strong>{player.points}점</strong><span>티어 점수</span></div>
           {admin && <div className="tier-admin-form"><label htmlFor={`tier-${player.id}`}>티어 조정</label><select disabled={saving} id={`tier-${player.id}`} value={tier} onChange={(event) => movePlayer(player.id, Number(event.target.value))}>{playerTiers.map((value) => <option value={value} key={value}>{playerTierLabel(value)}</option>)}</select></div>}
         </article>)}</div></section>;
       })}

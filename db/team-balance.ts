@@ -6,10 +6,12 @@ export type BalancePlayer = {
   losses: number;
 };
 
+export function playerMatchPoints(player: Pick<BalancePlayer, "wins" | "losses">) {
+  return player.wins * 3 - player.losses;
+}
+
 export function playerPower(player: BalancePlayer) {
-  const games = player.wins + player.losses;
-  const winRate = games ? player.wins / games : 0.5;
-  return (5 - player.tier) * 100 + Math.round(winRate * 100);
+  return (5 - player.tier) * 100 + playerMatchPoints(player);
 }
 
 export function balanceTeams(players: BalancePlayer[], separatedGroups: number[][], previousTeamAIds: number[] = []) {
