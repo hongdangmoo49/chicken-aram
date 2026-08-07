@@ -45,7 +45,7 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ?
   });
   assert.match(invalidSchedule.error?.message ?? "", /invalid schedule input/);
 
-  const playable = await admin.from("players").select("id").neq("tier", 5).order("id").limit(10);
+  const playable = await admin.from("players").select("id").neq("tier", 6).order("id").limit(10);
   assert.ifError(playable.error);
   assert.equal(playable.data.length, 10);
   let matchId;

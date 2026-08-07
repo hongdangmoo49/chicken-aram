@@ -5,9 +5,11 @@ import { normalizeTierChanges, playerTierLabel } from "../lib/player-tiers.ts";
 test("validates and deduplicates batch tier changes", () => {
   assert.deepEqual(normalizeTierChanges([{ playerId: 1, tier: 2, order: 0 }, { playerId: 1, tier: 3, order: 2 }]), [{ playerId: 1, tier: 3, order: 2 }]);
   assert.deepEqual(normalizeTierChanges([{ playerId: 1, tier: 5, order: 0 }]), [{ playerId: 1, tier: 5, order: 0 }]);
-  assert.equal(normalizeTierChanges([{ playerId: 1, tier: 6, order: 0 }]), null);
+  assert.deepEqual(normalizeTierChanges([{ playerId: 1, tier: 6, order: 0 }]), [{ playerId: 1, tier: 6, order: 0 }]);
+  assert.equal(normalizeTierChanges([{ playerId: 1, tier: 7, order: 0 }]), null);
   assert.equal(normalizeTierChanges([{ playerId: 1, tier: 2, order: -1 }]), null);
   assert.equal(normalizeTierChanges([]), null);
-  assert.equal(playerTierLabel(5), "코치");
+  assert.equal(playerTierLabel(5), "T5");
+  assert.equal(playerTierLabel(6), "코치");
   assert.equal(playerTierLabel(1), "T1");
 });

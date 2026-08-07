@@ -3,7 +3,7 @@ import test from "node:test";
 import { balanceTeams } from "../db/team-balance.ts";
 
 test("balances ten players while separating a requested pair", () => {
-  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: (index % 4) + 1, wins: 10, losses: 10 }));
+  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: (index % 5) + 1, wins: 10, losses: 10 }));
   const result = balanceTeams(players, [[1, 2]]);
   assert.equal(result.teamA.length, 5);
   assert.equal(result.teamB.length, 5);
@@ -13,6 +13,6 @@ test("balances ten players while separating a requested pair", () => {
 });
 
 test("keeps coaches out of playable team assignments", () => {
-  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: index === 9 ? 5 : 4, wins: 0, losses: 0 }));
+  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: index === 9 ? 6 : 5, wins: 0, losses: 0 }));
   assert.throws(() => balanceTeams(players, []), /코치는 대전 참가자로 선택할 수 없습니다/);
 });
