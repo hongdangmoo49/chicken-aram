@@ -75,9 +75,11 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(scheduleMutation, /replaceScheduledMatchPlayers/);
   assert.match(scheduleMutation, /normalizeTeamPlayers/);
   assert.match(scheduleMutation, /팀 선수를 교체했습니다/);
-  assert.match(schedulePage, /playerPower/);
+  assert.match(schedulePage, /calculateTeamRankScores/);
   assert.match(schedulePage, /teamRankScores/);
-  assert.match(ui, /teamRankScores.*랭크/);
+  assert.match(results, /teamRankScores=\{rankScores/);
+  assert.match(ui, /team-rank-score/);
+  assert.match(styles, /team-rank-score.*font-size: 14px/);
   assert.match(siteData, /rpc\("rebalance_scheduled_match"/);
   assert.match(rebalanceMigration, /delete from public\.match_players/);
   assert.match(rebalanceMigration, /current_status <> 'scheduled'/);

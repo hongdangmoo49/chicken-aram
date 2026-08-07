@@ -1,11 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { balanceTeams, playerMatchPoints, playerPower } from "../db/team-balance.ts";
+import { balanceTeams, calculateTeamRankScores, playerMatchPoints, playerPower } from "../db/team-balance.ts";
 
 test("uses three points per win and minus one per loss", () => {
   assert.equal(playerMatchPoints({ wins: 4, losses: 2 }), 10);
   assert.equal(playerMatchPoints({ wins: 0, losses: 3 }), -3);
   assert.equal(playerPower({ id: 1, nickname: "P1", tier: 3, wins: 4, losses: 2 }), 60);
+});
+
+test("sums five complete player rank scores per team", () => {
+  assert.deepEqual(calculateTeamRankScores([
+    ...Array.from({ length: 5 }, () => ({ team: "A", rankScore: 10 })),
+    ...Array.from({ length: 5 }, () => ({ team: "B", rankScore: 12 })),
+  ]), { A: 50, B: 60 });
+  assert.deepEqual(calculateTeamRankScores(Array.from({ length: 4 }, () => ({ team: "A", rankScore: 10 }))), {});
 });
 
 test("balances ten players while separating a requested pair", () => {

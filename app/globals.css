@@ -78,6 +78,7 @@ button, input, select { font: inherit; }
 .team { min-width: 0; }
 .team:last-child { text-align: right; }
 .team small { display: block; margin-bottom: 6px; color: var(--muted); font: 700 10px/1.2 ui-monospace, monospace; letter-spacing: .08em; }
+.team small .team-rank-score { color: var(--text); font-size: 14px; letter-spacing: 0; }
 .team strong { display: block; font-size: 18px; }
 .team-members { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .team.red strong { color: #ff8b8e; }

@@ -5,7 +5,7 @@ import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-pos
 import { coachTier, type PlayerTierChange } from "../lib/player-tiers";
 import type { MatchResultInput, MatchWinner } from "../lib/match-results";
 import { calculateRoundRecord } from "../lib/player-records";
-import { balanceTeams, playerMatchPoints } from "./team-balance";
+import { balanceTeams, playerMatchPoints, playerPower } from "./team-balance";
 
 export type Player = {
   id: number;
@@ -39,6 +39,7 @@ export type MatchParticipant = {
   playerId: number;
   team: MatchWinner;
   separatedGroup: number | null;
+  rankScore: number | null;
 };
 
 export type PlayerProfile = Player & { roundWins: number; roundLosses: number };
@@ -131,9 +132,12 @@ export const getMatchCounts = unstable_cache(loadMatchCounts, ["match-counts"], 
 async function loadMatchParticipants(matchIds: number[]): Promise<MatchParticipant[]> {
   if (!matchIds.length) return [];
   const supabase = createSupabasePublicClient();
-  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group").in("match_id", matchIds);
+  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group,players(tier,wins,losses)").in("match_id", matchIds);
   if (error) fail("대전 참가자 조회 실패", error);
-  return (data ?? []).map((member) => ({ matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group }));
+  return (data ?? []).map((member) => {
+    const player = member.players as unknown as { tier: number; wins: number; losses: number } | null;
+    return { matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group, rankScore: player ? playerPower(player) : null };
+  });
 }
 
 const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });

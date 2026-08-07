@@ -10,8 +10,19 @@ export function playerMatchPoints(player: Pick<BalancePlayer, "wins" | "losses">
   return player.wins * 3 - player.losses;
 }
 
-export function playerPower(player: BalancePlayer) {
+export function playerPower(player: Pick<BalancePlayer, "tier" | "wins" | "losses">) {
   return (5 - player.tier) * 25 + playerMatchPoints(player);
+}
+
+export function calculateTeamRankScores(members: { team: "A" | "B"; rankScore: number | null }[]) {
+  const scores: Partial<Record<"A" | "B", number>> = {};
+  for (const team of ["A", "B"] as const) {
+    const teamMembers = members.filter((member) => member.team === team);
+    if (teamMembers.length === 5 && teamMembers.every((member) => member.rankScore !== null)) {
+      scores[team] = teamMembers.reduce((total, member) => total + member.rankScore!, 0);
+    }
+  }
+  return scores;
 }
 
 export function balanceTeams(players: BalancePlayer[], separatedGroups: number[][], previousTeamAIds: number[] = []) {
