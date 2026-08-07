@@ -140,7 +140,7 @@ async function loadMatchParticipants(matchIds: number[]): Promise<MatchParticipa
   });
 }
 
-const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
+const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants-with-rank-score"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
 
 export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
   return getCachedMatchParticipants([...matchIds].sort((a, b) => a - b));

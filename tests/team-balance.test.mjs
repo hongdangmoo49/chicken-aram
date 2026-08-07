@@ -14,6 +14,7 @@ test("sums five complete player rank scores per team", () => {
     ...Array.from({ length: 5 }, () => ({ team: "B", rankScore: 12 })),
   ]), { A: 50, B: 60 });
   assert.deepEqual(calculateTeamRankScores(Array.from({ length: 4 }, () => ({ team: "A", rankScore: 10 }))), {});
+  assert.deepEqual(calculateTeamRankScores(Array.from({ length: 5 }, () => ({ team: "A", rankScore: null }))), {});
 });
 
 test("balances ten players while separating a requested pair", () => {

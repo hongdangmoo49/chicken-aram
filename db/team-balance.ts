@@ -18,7 +18,7 @@ export function calculateTeamRankScores(members: { team: "A" | "B"; rankScore: n
   const scores: Partial<Record<"A" | "B", number>> = {};
   for (const team of ["A", "B"] as const) {
     const teamMembers = members.filter((member) => member.team === team);
-    if (teamMembers.length === 5 && teamMembers.every((member) => member.rankScore !== null)) {
+    if (teamMembers.length === 5 && teamMembers.every((member) => Number.isFinite(member.rankScore))) {
       scores[team] = teamMembers.reduce((total, member) => total + member.rankScore!, 0);
     }
   }
