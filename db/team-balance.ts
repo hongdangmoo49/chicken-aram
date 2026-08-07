@@ -11,7 +11,7 @@ export function playerMatchPoints(player: Pick<BalancePlayer, "wins" | "losses">
 }
 
 export function playerPower(player: BalancePlayer) {
-  return (5 - player.tier) * 100 + playerMatchPoints(player);
+  return (5 - player.tier) * 25 + playerMatchPoints(player);
 }
 
 export function balanceTeams(players: BalancePlayer[], separatedGroups: number[][], previousTeamAIds: number[] = []) {

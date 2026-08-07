@@ -5,7 +5,7 @@ import { balanceTeams, playerMatchPoints, playerPower } from "../db/team-balance
 test("uses three points per win and minus one per loss", () => {
   assert.equal(playerMatchPoints({ wins: 4, losses: 2 }), 10);
   assert.equal(playerMatchPoints({ wins: 0, losses: 3 }), -3);
-  assert.equal(playerPower({ id: 1, nickname: "P1", tier: 3, wins: 4, losses: 2 }), 210);
+  assert.equal(playerPower({ id: 1, nickname: "P1", tier: 3, wins: 4, losses: 2 }), 60);
 });
 
 test("balances ten players while separating a requested pair", () => {
