@@ -19,10 +19,11 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     access(new URL("app/admin/members/page.tsx", root)),
     access(new URL("app/admin/members/member-role-editor.tsx", root)),
   ]);
-  const [design, tiers, tierDragBoard, schedule, scheduleMutation, results, resultRoute, siteData, migration, positionMigration, batchTierMigration, tierOrderMigration, batchRoleMigration, resultMigration, rebalanceMigration, historicalMigration, recordMigration, signupFixMigration, safeRecordMigration, login, profile, membersPage, memberRoleEditor, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
+  const [design, tiers, tierDragBoard, schedulePage, schedule, scheduleMutation, results, resultRoute, siteData, migration, positionMigration, batchTierMigration, tierOrderMigration, batchRoleMigration, resultMigration, rebalanceMigration, historicalMigration, recordMigration, signupFixMigration, safeRecordMigration, login, profile, membersPage, memberRoleEditor, ui, auth, roleRoute, tierRoute, roles, nicknameRoute, thumbnailRoute, positionRoute, authActions, toast, styles] = await Promise.all([
     readFile(new URL("DESIGN.md", root), "utf8"),
     readFile(new URL("app/tiers/page.tsx", root), "utf8"),
     readFile(new URL("app/tiers/tier-drag-board.tsx", root), "utf8"),
+    readFile(new URL("app/schedule/page.tsx", root), "utf8"),
     readFile(new URL("app/api/schedule/route.ts", root), "utf8"),
     readFile(new URL("app/api/schedule/[id]/route.ts", root), "utf8"),
     readFile(new URL("app/results/page.tsx", root), "utf8"),
@@ -74,6 +75,9 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(scheduleMutation, /replaceScheduledMatchPlayers/);
   assert.match(scheduleMutation, /normalizeTeamPlayers/);
   assert.match(scheduleMutation, /팀 선수를 교체했습니다/);
+  assert.match(schedulePage, /playerPower/);
+  assert.match(schedulePage, /teamRankScores/);
+  assert.match(ui, /teamRankScores.*랭크/);
   assert.match(siteData, /rpc\("rebalance_scheduled_match"/);
   assert.match(rebalanceMigration, /delete from public\.match_players/);
   assert.match(rebalanceMigration, /current_status <> 'scheduled'/);

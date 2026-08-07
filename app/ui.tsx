@@ -39,7 +39,7 @@ export function PlayerRow({ player, rank, points }: { player: Player; rank: numb
   return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="player-tags"><span className="tier-pill">{playerTierLabel(player.tier)}</span><PlayerPositions positions={player.positions} /></span><span className="win-rate">{points}점</span></div>;
 }
 
-export function MatchCard({ match, featured = false, compact = false }: { match: Match; featured?: boolean; compact?: boolean }) {
+export function MatchCard({ match, featured = false, compact = false, teamRankScores }: { match: Match; featured?: boolean; compact?: boolean; teamRankScores?: Partial<Record<"A" | "B", number>> }) {
   const completed = match.status === "completed";
   const winner = match.winner ?? (completed && match.redScore !== null && match.blueScore !== null ? match.redScore > match.blueScore ? "A" : "B" : null);
   const date = new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" }).format(new Date(match.scheduledAt));
@@ -47,9 +47,9 @@ export function MatchCard({ match, featured = false, compact = false }: { match:
     <article className={`match-card${featured ? " featured" : ""}${compact ? " compact" : ""}`}>
       <div className="match-meta"><span>{date}</span><span>{match.map}</span></div>
       <div className="match-teams">
-        <div className={`team red${winner === "A" ? " winner" : ""}`}><small>A TEAM{winner === "A" ? " · WIN" : ""}</small><strong>A팀</strong><span className="team-members">{match.teamRed}</span></div>
+        <div className={`team red${winner === "A" ? " winner" : ""}`}><small>A TEAM{winner === "A" ? " · WIN" : ""}{teamRankScores?.A === undefined ? "" : ` · 랭크 ${teamRankScores.A}점`}</small><strong>A팀</strong><span className="team-members">{match.teamRed}</span></div>
         <div className="versus">{completed ? <span className="score">{match.redScore}:{match.blueScore}</span> : "VS"}</div>
-        <div className={`team blue${winner === "B" ? " winner" : ""}`}><small>B TEAM{winner === "B" ? " · WIN" : ""}</small><strong>B팀</strong><span className="team-members">{match.teamBlue}</span></div>
+        <div className={`team blue${winner === "B" ? " winner" : ""}`}><small>B TEAM{winner === "B" ? " · WIN" : ""}{teamRankScores?.B === undefined ? "" : ` · 랭크 ${teamRankScores.B}점`}</small><strong>B팀</strong><span className="team-members">{match.teamBlue}</span></div>
       </div>
       {!compact && <div className="match-footer"><span className="status">{completed ? "경기 종료" : "팀 배정 완료"}</span><span>{completed && match.mvp ? `MVP · ${match.mvp}` : "5 vs 5 · BO1"}</span></div>}
     </article>

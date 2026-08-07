@@ -1,4 +1,5 @@
 import { getMatchParticipants, getMatches, getPlayers, type MatchParticipant, type Player } from "../../db/site-data";
+import { playerPower } from "../../db/team-balance";
 import { coachTier, playerTierLabel } from "../../lib/player-tiers";
 import { AdminGate, AdminOnly } from "../session-ui";
 import { MatchCard, PageShell } from "../ui";
@@ -21,9 +22,23 @@ function TeamPlayerFields({ matchId, members, players }: { matchId: number; memb
   </div></fieldset>;
 }
 
+function teamRankScore(members: MatchParticipant[], playerById: Map<number, Player>, team: "A" | "B") {
+  let score = 0;
+  let count = 0;
+  for (const member of members) {
+    if (member.team !== team) continue;
+    const player = playerById.get(member.playerId);
+    if (!player) return undefined;
+    score += playerPower(player);
+    count += 1;
+  }
+  return count === 5 ? score : undefined;
+}
+
 export default async function SchedulePage() {
   const [upcoming, players] = await Promise.all([getMatches({ status: "scheduled", limit: 50, ascending: true }), getPlayers()]);
   const members = await getMatchParticipants(upcoming.map((match) => match.id));
+  const playerById = new Map(players.map((player) => [player.id, player]));
   return <PageShell active="schedule">
     <header className="page-intro"><div><span className="eyebrow">UPCOMING MATCHES</span><h1>대전 예정</h1></div><p>참가자 10명을 고르면 티어와 승리 +3점·패배 -1점 합계를 기준으로 가장 균형에 가까운 A팀과 B팀을 만듭니다.</p></header>
     <div className="schedule-grid">
@@ -31,7 +46,7 @@ export default async function SchedulePage() {
         const matchMembers = members.filter((member) => member.matchId === match.id);
         const initialGroups = Object.fromEntries(matchMembers.filter((member) => member.separatedGroup !== null).map((member) => [member.playerId, member.separatedGroup!])) as Record<number, number>;
         return <div className="scheduled-match" key={match.id}>
-        <MatchCard match={match} />
+        <MatchCard match={match} teamRankScores={{ A: teamRankScore(matchMembers, playerById, "A"), B: teamRankScore(matchMembers, playerById, "B") }} />
         <AdminOnly><div className="match-admin-actions">
           <details><summary>수정 · 선수 교체 · 팀 재편성</summary><form action={`/api/schedule/${match.id}`} className="match-edit-form" method="post">
             <div className="field"><label htmlFor={`scheduledAt-${match.id}`}>일시</label><input id={`scheduledAt-${match.id}`} name="scheduledAt" type="datetime-local" defaultValue={localDateTime(match.scheduledAt)} required /></div>
