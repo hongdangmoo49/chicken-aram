@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../auth";
-import { signIn, signUp } from "../auth/actions";
+import { requestPasswordReset, signIn, signUp } from "../auth/actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "로그인" };
@@ -30,6 +30,7 @@ export default async function LoginPage({
             <div className="field"><label htmlFor="login-email">이메일</label><input id="login-email" name="email" type="email" autoComplete="email" required /></div>
             <div className="field"><label htmlFor="login-password">비밀번호</label><input id="login-password" name="password" type="password" autoComplete="current-password" required /></div>
             <button className="button primary" type="submit">로그인</button>
+            <button className="password-reset-link" formAction={requestPasswordReset} formNoValidate type="submit">비밀번호를 잊으셨나요?</button>
           </form>
           <form action={signUp} className="form-grid signup-form">
             <h2>회원가입</h2>

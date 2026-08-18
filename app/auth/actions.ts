@@ -24,6 +24,41 @@ export async function signIn(formData: FormData) {
   redirect(withToast(destination, "success", "로그인했습니다."));
 }
 
+export async function requestPasswordReset(formData: FormData) {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) redirect(withToast("/login", "error", "가입한 이메일을 입력해 주세요."));
+  if (!(await takeRateLimit("password-reset", await clientAddress(), 3, 3600))) {
+    redirect(withToast("/login", "error", "재설정 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."));
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+  });
+  if (error) redirect(withToast("/login", "error", "재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해 주세요."));
+  redirect(withToast("/login", "success", "가입된 이메일이면 비밀번호 재설정 메일을 보냈습니다."));
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "");
+  if (password.length < 8 || password !== confirmation) {
+    redirect(withToast("/reset-password", "error", "8자 이상의 동일한 비밀번호를 입력해 주세요."));
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect(withToast("/login", "error", "비밀번호 재설정 링크를 다시 요청해 주세요."));
+  if (!(await takeRateLimit("password-update", user.id, 5, 3600))) {
+    redirect(withToast("/reset-password", "error", "비밀번호 변경 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요."));
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) redirect(withToast("/reset-password", "error", "비밀번호를 변경하지 못했습니다. 새 비밀번호를 확인해 주세요."));
+  await supabase.auth.signOut();
+  redirect(withToast("/login", "success", "비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요."));
+}
+
 export async function signUp(formData: FormData) {
   const displayName = String(formData.get("displayName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
