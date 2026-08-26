@@ -161,9 +161,13 @@ button, input, select { font: inherit; }
 .tier-player-info span, .tier-player-rate span { color: var(--muted); font-size: 11px; }
 .tier-player-rate { text-align: right; }
 .tier-player-rate strong { color: var(--accent); font: 800 17px/1 ui-monospace, monospace; }
-.tier-admin-form { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 88px; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line); cursor: default; }
+.rank-review-warning { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-left: 3px; border: 1px solid #e2a13b; border-radius: 50%; color: #ffc76d !important; font: 900 11px/1 ui-monospace, monospace; cursor: help; }
+.tier-admin-form { display: grid; grid-column: 1 / -1; grid-template-columns: 1fr 88px auto; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line); cursor: default; }
 .tier-admin-form label { color: var(--muted); font-size: 11px; font-weight: 700; }
 .tier-admin-form select { height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); }
+.tier-admin-form .rank-points-edit { min-height: 34px; padding: 6px 9px; }
+.rank-points-field { display: grid; grid-column: 1 / -1; grid-template-columns: auto 88px; gap: 8px; align-items: center; justify-self: end; }
+.rank-points-field input { width: 88px; height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); }
 .sr-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 
 .match-list { display: grid; gap: 12px; }

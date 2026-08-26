@@ -4,14 +4,11 @@ export type BalancePlayer = {
   tier: number;
   wins: number;
   losses: number;
+  points: number;
 };
 
-export function playerMatchPoints(player: Pick<BalancePlayer, "wins" | "losses">) {
-  return (player.wins - player.losses) * 3;
-}
-
-export function playerPower(player: Pick<BalancePlayer, "tier" | "wins" | "losses">) {
-  return (5 - player.tier) * 50 + playerMatchPoints(player);
+export function playerPower(player: Pick<BalancePlayer, "tier" | "points">) {
+  return (5 - player.tier) * 50 + player.points;
 }
 
 export function calculateTeamRankScores(members: { team: "A" | "B"; rankScore: number | null }[]) {

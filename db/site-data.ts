@@ -5,7 +5,7 @@ import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-pos
 import { coachTier, type PlayerTierChange } from "../lib/player-tiers";
 import type { MatchResultInput, MatchWinner } from "../lib/match-results";
 import { calculateRoundRecord } from "../lib/player-records";
-import { balanceTeams, playerMatchPoints, playerPower } from "./team-balance";
+import { balanceTeams, playerPower } from "./team-balance";
 
 export type Player = {
   id: number;
@@ -60,7 +60,7 @@ async function loadPlayers(): Promise<Player[]> {
   const supabase = createSupabasePublicClient();
   const { data, error } = await supabase
     .from("players")
-    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions,tier_order")
+    .select("id,nickname,tier,wins,losses,rank_points,thumbnail_path,preferred_positions,tier_order")
     .eq("is_active", true);
   if (error) fail("선수 목록 조회 실패", error);
 
@@ -71,7 +71,7 @@ async function loadPlayers(): Promise<Player[]> {
       tier: player.tier,
       wins: player.wins,
       losses: player.losses,
-      points: playerMatchPoints(player),
+      points: Number(player.rank_points),
       thumbnailKey: player.thumbnail_path,
       positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
       tierOrder: player.tier_order,
@@ -84,7 +84,7 @@ async function loadPlayers(): Promise<Player[]> {
     });
 }
 
-export const getPlayers = unstable_cache(loadPlayers, ["players-rank-score-v2"], { revalidate: CACHE_SECONDS, tags: [PLAYERS_CACHE_TAG] });
+export const getPlayers = unstable_cache(loadPlayers, ["players-rank-score-v3"], { revalidate: CACHE_SECONDS, tags: [PLAYERS_CACHE_TAG] });
 
 async function loadMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
   const supabase = createSupabasePublicClient();
@@ -132,15 +132,15 @@ export const getMatchCounts = unstable_cache(loadMatchCounts, ["match-counts"], 
 async function loadMatchParticipants(matchIds: number[]): Promise<MatchParticipant[]> {
   if (!matchIds.length) return [];
   const supabase = createSupabasePublicClient();
-  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group,players(tier,wins,losses)").in("match_id", matchIds);
+  const { data, error } = await supabase.from("match_players").select("match_id,player_id,team,separated_group,players(tier,rank_points)").in("match_id", matchIds);
   if (error) fail("대전 참가자 조회 실패", error);
   return (data ?? []).map((member) => {
-    const player = member.players as unknown as { tier: number; wins: number; losses: number } | null;
-    return { matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group, rankScore: player ? playerPower(player) : null };
+    const player = member.players as unknown as { tier: number; rank_points: number } | null;
+    return { matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, separatedGroup: member.separated_group, rankScore: player ? playerPower({ tier: player.tier, points: Number(player.rank_points) }) : null };
   });
 }
 
-const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants-rank-score-v2"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
+const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants-rank-score-v3"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
 
 export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
   return getCachedMatchParticipants([...matchIds].sort((a, b) => a - b));
@@ -247,7 +247,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
 
   const { data: player, error: playerError } = await admin
     .from("players")
-    .select("id,nickname,tier,wins,losses,thumbnail_path,preferred_positions,tier_order")
+    .select("id,nickname,tier,wins,losses,rank_points,thumbnail_path,preferred_positions,tier_order")
     .eq("id", profile.player_id)
     .single();
   if (playerError || !player) fail("선수 프로필 조회 실패", playerError);
@@ -267,7 +267,7 @@ export async function getPlayerProfile(userId: string): Promise<PlayerProfile | 
     tier: player.tier,
     wins: player.wins,
     losses: player.losses,
-    points: playerMatchPoints(player),
+    points: Number(player.rank_points),
     thumbnailKey: player.thumbnail_path,
     positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [],
     tierOrder: player.tier_order,
@@ -311,7 +311,7 @@ export async function setPlayerTiers(changes: PlayerTierChange[], actorId: strin
   const admin = createSupabaseAdminClient();
   const { error } = await admin.rpc("set_player_tiers", { changes, p_actor_id: actorId });
   if (error) fail("선수 티어 저장 실패", error);
-  expirePublicCache(PLAYERS_CACHE_TAG);
+  expirePublicCache(PLAYERS_CACHE_TAG, MATCHES_CACHE_TAG);
 }
 
 export async function saveMatchResult(input: MatchResultInput & { matchId: number; actorId: string }) {

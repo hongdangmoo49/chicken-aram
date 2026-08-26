@@ -1,13 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { balanceTeams, calculateTeamRankScores, playerMatchPoints, playerPower } from "../db/team-balance.ts";
+import { balanceTeams, calculateTeamRankScores, playerPower } from "../db/team-balance.ts";
 
-test("uses three points per win and minus three per loss", () => {
-  assert.equal(playerMatchPoints({ wins: 4, losses: 2 }), 6);
-  assert.equal(playerMatchPoints({ wins: 0, losses: 3 }), -9);
-  assert.equal(playerMatchPoints({ wins: 8, losses: 3 }), 15);
-  assert.deepEqual([1, 2, 3, 4, 5].map((tier) => playerPower({ tier, wins: 0, losses: 0 })), [200, 150, 100, 50, 0]);
-  assert.equal(playerPower({ tier: 3, wins: 4, losses: 2 }), 106);
+test("uses persisted RP with 50-point tier gaps", () => {
+  assert.deepEqual([1, 2, 3, 4, 5].map((tier) => playerPower({ tier, points: 0 })), [200, 150, 100, 50, 0]);
+  assert.equal(playerPower({ tier: 3, points: 15 }), 115);
 });
 
 test("sums five complete player rank scores per team", () => {
@@ -20,7 +17,7 @@ test("sums five complete player rank scores per team", () => {
 });
 
 test("balances ten players while separating a requested pair", () => {
-  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: (index % 5) + 1, wins: 10, losses: 10 }));
+  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: (index % 5) + 1, wins: 10, losses: 10, points: 0 }));
   const result = balanceTeams(players, [[1, 2]]);
   assert.equal(result.teamA.length, 5);
   assert.equal(result.teamB.length, 5);
@@ -30,6 +27,6 @@ test("balances ten players while separating a requested pair", () => {
 });
 
 test("keeps coaches out of playable team assignments", () => {
-  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: index === 9 ? 6 : 5, wins: 0, losses: 0 }));
+  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: index === 9 ? 6 : 5, wins: 0, losses: 0, points: 0 }));
   assert.throws(() => balanceTeams(players, []), /코치는 대전 참가자로 선택할 수 없습니다/);
 });

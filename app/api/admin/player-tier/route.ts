@@ -23,5 +23,5 @@ export async function POST(request: Request) {
   } catch {
     return redirectWithToast(request, "/tiers", "error", "선수 티어를 일괄 변경하지 못했습니다.");
   }
-  return redirectWithToast(request, "/tiers", "success", `${changes.length}명의 티어를 변경했습니다.`);
+  return redirectWithToast(request, "/tiers", "success", "선수 티어와 RP를 저장했습니다.");
 }
