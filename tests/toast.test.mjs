@@ -14,5 +14,5 @@ test("hides the toast immediately before cleaning the URL", async () => {
   const component = await readFile(new URL("../app/toast.tsx", import.meta.url), "utf8");
   assert.match(component, /setVisible\(false\)/);
   assert.match(component, /if \(!visible\) return null/);
-  assert.match(component, /router\.replace/);
+  assert.match(component, /window\.history\.replaceState/);
 });

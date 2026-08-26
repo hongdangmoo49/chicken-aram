@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 export function Toast() {
   const searchParams = useSearchParams();
@@ -14,7 +14,6 @@ export function Toast() {
 }
 
 function ToastMessage({ message, type }: { message: string; type: "success" | "error" }) {
-  const router = useRouter();
   const [visible, setVisible] = useState(true);
 
   const dismiss = useCallback(() => {
@@ -22,8 +21,8 @@ function ToastMessage({ message, type }: { message: string; type: "success" | "e
     const url = new URL(window.location.href);
     url.searchParams.delete("toast");
     url.searchParams.delete("toastType");
-    router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
-  }, [router]);
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(dismiss, 4500);
