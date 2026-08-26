@@ -5,7 +5,8 @@ import { balanceTeams, calculateTeamRankScores, playerMatchPoints, playerPower }
 test("uses three points per win and minus one per loss", () => {
   assert.equal(playerMatchPoints({ wins: 4, losses: 2 }), 10);
   assert.equal(playerMatchPoints({ wins: 0, losses: 3 }), -3);
-  assert.equal(playerPower({ id: 1, nickname: "P1", tier: 3, wins: 4, losses: 2 }), 60);
+  assert.deepEqual([1, 2, 3, 4, 5].map((tier) => playerPower({ tier, wins: 0, losses: 0 })), [200, 150, 100, 50, 0]);
+  assert.equal(playerPower({ tier: 3, wins: 4, losses: 2 }), 110);
 });
 
 test("sums five complete player rank scores per team", () => {

@@ -11,7 +11,7 @@ export function playerMatchPoints(player: Pick<BalancePlayer, "wins" | "losses">
 }
 
 export function playerPower(player: Pick<BalancePlayer, "tier" | "wins" | "losses">) {
-  return (5 - player.tier) * 25 + playerMatchPoints(player);
+  return (5 - player.tier) * 50 + playerMatchPoints(player);
 }
 
 export function calculateTeamRankScores(members: { team: "A" | "B"; rankScore: number | null }[]) {
