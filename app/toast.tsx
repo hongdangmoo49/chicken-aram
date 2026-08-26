@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export function Toast() {
@@ -15,8 +15,10 @@ export function Toast() {
 
 function ToastMessage({ message, type }: { message: string; type: "success" | "error" }) {
   const router = useRouter();
+  const [visible, setVisible] = useState(true);
 
   const dismiss = useCallback(() => {
+    setVisible(false);
     const url = new URL(window.location.href);
     url.searchParams.delete("toast");
     url.searchParams.delete("toastType");
@@ -27,6 +29,8 @@ function ToastMessage({ message, type }: { message: string; type: "success" | "e
     const timer = window.setTimeout(dismiss, 4500);
     return () => window.clearTimeout(timer);
   }, [dismiss]);
+
+  if (!visible) return null;
 
   return (
     <div className={`toast toast-${type}`} role={type === "error" ? "alert" : "status"} aria-live="polite">
