@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { balanceTeams, calculateTeamRankScores, playerMatchPoints, playerPower } from "../db/team-balance.ts";
 
-test("uses three points per win and minus one per loss", () => {
-  assert.equal(playerMatchPoints({ wins: 4, losses: 2 }), 10);
-  assert.equal(playerMatchPoints({ wins: 0, losses: 3 }), -3);
+test("uses three points per win and minus three per loss", () => {
+  assert.equal(playerMatchPoints({ wins: 4, losses: 2 }), 6);
+  assert.equal(playerMatchPoints({ wins: 0, losses: 3 }), -9);
+  assert.equal(playerMatchPoints({ wins: 8, losses: 3 }), 15);
   assert.deepEqual([1, 2, 3, 4, 5].map((tier) => playerPower({ tier, wins: 0, losses: 0 })), [200, 150, 100, 50, 0]);
-  assert.equal(playerPower({ tier: 3, wins: 4, losses: 2 }), 110);
+  assert.equal(playerPower({ tier: 3, wins: 4, losses: 2 }), 106);
 });
 
 test("sums five complete player rank scores per team", () => {

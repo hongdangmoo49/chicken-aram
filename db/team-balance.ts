@@ -7,7 +7,7 @@ export type BalancePlayer = {
 };
 
 export function playerMatchPoints(player: Pick<BalancePlayer, "wins" | "losses">) {
-  return player.wins * 3 - player.losses;
+  return (player.wins - player.losses) * 3;
 }
 
 export function playerPower(player: Pick<BalancePlayer, "tier" | "wins" | "losses">) {

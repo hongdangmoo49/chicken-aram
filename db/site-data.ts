@@ -84,7 +84,7 @@ async function loadPlayers(): Promise<Player[]> {
     });
 }
 
-export const getPlayers = unstable_cache(loadPlayers, ["players"], { revalidate: CACHE_SECONDS, tags: [PLAYERS_CACHE_TAG] });
+export const getPlayers = unstable_cache(loadPlayers, ["players-rank-score-v2"], { revalidate: CACHE_SECONDS, tags: [PLAYERS_CACHE_TAG] });
 
 async function loadMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
   const supabase = createSupabasePublicClient();
@@ -140,7 +140,7 @@ async function loadMatchParticipants(matchIds: number[]): Promise<MatchParticipa
   });
 }
 
-const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants-with-rank-score"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
+const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match-participants-rank-score-v2"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
 
 export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
   return getCachedMatchParticipants([...matchIds].sort((a, b) => a - b));
