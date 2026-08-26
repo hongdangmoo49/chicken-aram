@@ -47,7 +47,6 @@ begin
 end;
 $$;
 
-drop trigger if exists apply_player_rank_progression on public.players;
 create trigger apply_player_rank_progression
 before update of wins, losses on public.players
 for each row execute function public.apply_player_rank_progression();
