@@ -4,6 +4,7 @@ import { createSupabasePublicClient } from "../lib/supabase/public";
 import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-positions";
 import { coachTier, type PlayerTierChange } from "../lib/player-tiers";
 import type { MatchResultInput, MatchWinner } from "../lib/match-results";
+import { currentMvpRound, topMvpCandidateIds } from "../lib/mvp-voting";
 import { calculateRoundRecord } from "../lib/player-records";
 import { balanceTeams, playerPower } from "./team-balance";
 
@@ -30,6 +31,7 @@ export type Match = {
   blueScore: number | null;
   mvp: string | null;
   mvpPlayerId: number | null;
+  mvpVotingStartedAt: string | null;
   winner: MatchWinner | null;
   createdBy: string | null;
 };
@@ -40,6 +42,19 @@ export type MatchParticipant = {
   team: MatchWinner;
   separatedGroup: number | null;
   rankScore: number | null;
+};
+
+export type MvpAward = { matchId: number; team: MatchWinner; playerId: number; nickname: string; sourceRound: number };
+export type MvpVotingContest = {
+  matchId: number;
+  playedAt: string;
+  map: string;
+  candidateTeam: MatchWinner;
+  round: number;
+  runoff: boolean;
+  votesCast: number;
+  selectedCandidateId: number | null;
+  candidates: { id: number; nickname: string; thumbnailKey: string | null }[];
 };
 
 export type PlayerProfile = Player & { roundWins: number; roundLosses: number };
@@ -90,7 +105,7 @@ async function loadMatches(options: { status?: Match["status"]; limit?: number; 
   const supabase = createSupabasePublicClient();
   let query = supabase
     .from("matches")
-    .select("id,scheduled_at,played_at,map,status,team_a,team_b,a_score,b_score,mvp,mvp_player_id,winner,created_by");
+    .select("id,scheduled_at,played_at,map,status,team_a,team_b,a_score,b_score,mvp,mvp_player_id,mvp_voting_started_at,winner,created_by");
   if (options.status) query = query.eq("status", options.status);
   query = query.order(options.status === "completed" ? "played_at" : "scheduled_at", { ascending: options.ascending ?? false });
   if (options.limit) query = query.range(options.offset ?? 0, (options.offset ?? 0) + options.limit - 1);
@@ -108,6 +123,7 @@ async function loadMatches(options: { status?: Match["status"]; limit?: number; 
     blueScore: match.b_score,
     mvp: match.mvp,
     mvpPlayerId: match.mvp_player_id === null ? null : Number(match.mvp_player_id),
+    mvpVotingStartedAt: match.mvp_voting_started_at,
     winner: match.winner as MatchWinner | null,
     createdBy: match.created_by,
   }));
@@ -144,6 +160,97 @@ const getCachedMatchParticipants = unstable_cache(loadMatchParticipants, ["match
 
 export async function getMatchParticipants(matchIds: number[] = []): Promise<MatchParticipant[]> {
   return getCachedMatchParticipants([...matchIds].sort((a, b) => a - b));
+}
+
+async function loadMvpAwards(matchIds: number[]): Promise<MvpAward[]> {
+  if (!matchIds.length) return [];
+  const supabase = createSupabasePublicClient();
+  const { data, error } = await supabase.from("match_mvp_awards").select("match_id,team,player_id,source_round,players(nickname)").in("match_id", matchIds);
+  if (error) fail("MVP 수상자 조회 실패", error);
+  return (data ?? []).map((award) => ({
+    matchId: Number(award.match_id),
+    team: award.team as MatchWinner,
+    playerId: Number(award.player_id),
+    nickname: (award.players as unknown as { nickname: string }).nickname,
+    sourceRound: Number(award.source_round),
+  }));
+}
+
+const getCachedMvpAwards = unstable_cache(loadMvpAwards, ["mvp-awards"], { revalidate: CACHE_SECONDS, tags: [MATCHES_CACHE_TAG] });
+
+export async function getMvpAwards(matchIds: number[] = []) {
+  return getCachedMvpAwards([...matchIds].sort((a, b) => a - b));
+}
+
+export async function getMvpVotingContests(userId: string): Promise<MvpVotingContest[]> {
+  const admin = createSupabaseAdminClient();
+  const { data: profile, error: profileError } = await admin.from("profiles").select("player_id").eq("id", userId).maybeSingle();
+  if (profileError) fail("MVP 투표 선수 조회 실패", profileError);
+  if (!profile?.player_id) return [];
+  const voterPlayerId = Number(profile.player_id);
+
+  const { data: matches, error: matchError } = await admin
+    .from("matches")
+    .select("id,played_at,map")
+    .eq("status", "completed")
+    .not("mvp_voting_started_at", "is", null)
+    .order("played_at", { ascending: false })
+    .limit(50);
+  if (matchError) fail("MVP 투표 경기 조회 실패", matchError);
+  const matchIds = (matches ?? []).map((match) => Number(match.id));
+  if (!matchIds.length) return [];
+
+  const [memberResult, voteResult, awardResult] = await Promise.all([
+    admin.from("match_players").select("match_id,player_id,team,players(id,nickname,thumbnail_path)").in("match_id", matchIds),
+    admin.from("match_mvp_votes").select("match_id,candidate_team,round,voter_player_id,candidate_player_id").in("match_id", matchIds),
+    admin.from("match_mvp_awards").select("match_id,team").in("match_id", matchIds),
+  ]);
+  if (memberResult.error) fail("MVP 후보 조회 실패", memberResult.error);
+  if (voteResult.error) fail("MVP 투표 현황 조회 실패", voteResult.error);
+  if (awardResult.error) fail("MVP 확정 현황 조회 실패", awardResult.error);
+
+  const members = (memberResult.data ?? []).map((member) => {
+    const player = member.players as unknown as { id: number; nickname: string; thumbnail_path: string | null };
+    return { matchId: Number(member.match_id), playerId: Number(member.player_id), team: member.team as MatchWinner, nickname: player.nickname, thumbnailKey: player.thumbnail_path };
+  });
+  const votes = (voteResult.data ?? []).map((vote) => ({ matchId: Number(vote.match_id), candidateTeam: vote.candidate_team as MatchWinner, round: Number(vote.round), voterPlayerId: Number(vote.voter_player_id), candidatePlayerId: Number(vote.candidate_player_id) }));
+  const awards = new Set((awardResult.data ?? []).map((award) => `${award.match_id}:${award.team}`));
+
+  return (matches ?? []).flatMap((match) => {
+    const matchId = Number(match.id);
+    const voter = members.find((member) => member.matchId === matchId && member.playerId === voterPlayerId);
+    if (!voter) return [];
+    const candidateTeam: MatchWinner = voter.team === "A" ? "B" : "A";
+    if (awards.has(`${matchId}:${candidateTeam}`)) return [];
+    const contestVotes = votes.filter((vote) => vote.matchId === matchId && vote.candidateTeam === candidateTeam);
+    const round = currentMvpRound(contestVotes);
+    let candidates = members.filter((member) => member.matchId === matchId && member.team === candidateTeam);
+    if (round > 1) {
+      const previousVotes = contestVotes.filter((vote) => vote.round === round - 1);
+      const finalistIds = topMvpCandidateIds(previousVotes);
+      if (finalistIds.size < 2) return [];
+      candidates = candidates.filter((candidate) => finalistIds.has(candidate.playerId));
+    }
+    const currentVotes = contestVotes.filter((vote) => vote.round === round);
+    return [{
+      matchId,
+      playedAt: String(match.played_at),
+      map: String(match.map),
+      candidateTeam,
+      round,
+      runoff: round > 1,
+      votesCast: currentVotes.length,
+      selectedCandidateId: currentVotes.find((vote) => vote.voterPlayerId === voterPlayerId)?.candidatePlayerId ?? null,
+      candidates: candidates.map((candidate) => ({ id: candidate.playerId, nickname: candidate.nickname, thumbnailKey: candidate.thumbnailKey })),
+    }];
+  });
+}
+
+export async function castMvpVote(input: { matchId: number; candidatePlayerId: number; actorId: string }) {
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.rpc("cast_match_mvp_vote", { p_match_id: input.matchId, p_candidate_player_id: input.candidatePlayerId, p_actor_id: input.actorId });
+  if (error) fail("MVP 투표 저장 실패", error);
+  expirePublicCache(PLAYERS_CACHE_TAG, MATCHES_CACHE_TAG);
 }
 
 export async function createBalancedSchedule(input: {
@@ -322,7 +429,7 @@ export async function saveMatchResult(input: MatchResultInput & { matchId: numbe
     p_a_score: input.aScore,
     p_b_score: input.bScore,
     p_winner: input.winner,
-    p_mvp_player_id: input.mvpPlayerId,
+    p_mvp_player_id: null,
     p_actor_id: input.actorId,
   });
   if (error) fail("대전 결과 저장 실패", error);

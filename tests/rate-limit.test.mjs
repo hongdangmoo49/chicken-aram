@@ -15,6 +15,7 @@ test("rate limits authentication and every custom write endpoint", async () => {
     "app/api/schedule/route.ts",
     "app/api/schedule/[id]/route.ts",
     "app/api/results/[id]/route.ts",
+    "app/api/mvp-votes/[matchId]/route.ts",
   ];
   for (const file of files) assert.match(await readFile(new URL(file, root), "utf8"), /takeRateLimit/);
   const migration = await readFile(new URL("supabase/migrations/202607230018_add_request_rate_limits.sql", root), "utf8");

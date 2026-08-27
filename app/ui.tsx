@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Match, Player } from "../db/site-data";
+import type { Match, MvpAward, Player } from "../db/site-data";
 import { playerTierLabel } from "../lib/player-tiers";
 import { PlayerAvatar, PlayerPositions } from "./player-ui";
 import { AccountMenu } from "./session-ui";
@@ -39,10 +39,13 @@ export function PlayerRow({ player, rank, points }: { player: Player; rank: numb
   return <div className="player-row"><span className="rank">{String(rank).padStart(2, "0")}</span><span className="player-name"><PlayerAvatar player={player} />{player.nickname}</span><span className="player-tags"><span className="tier-pill">{playerTierLabel(player.tier)}</span><PlayerPositions positions={player.positions} /></span><span className="win-rate">{points}점</span></div>;
 }
 
-export function MatchCard({ match, featured = false, compact = false, teamRankScores }: { match: Match; featured?: boolean; compact?: boolean; teamRankScores?: Partial<Record<"A" | "B", number>> }) {
+export function MatchCard({ match, featured = false, compact = false, mvpAwards = [], teamRankScores }: { match: Match; featured?: boolean; compact?: boolean; mvpAwards?: MvpAward[]; teamRankScores?: Partial<Record<"A" | "B", number>> }) {
   const completed = match.status === "completed";
   const winner = match.winner ?? (completed && match.redScore !== null && match.blueScore !== null ? match.redScore > match.blueScore ? "A" : "B" : null);
   const date = new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Seoul" }).format(new Date(match.scheduledAt));
+  const mvpText = mvpAwards.length
+    ? `상대팀 선정 MVP · ${mvpAwards.sort((a, b) => a.team.localeCompare(b.team)).map((award) => `${award.team}팀 ${award.nickname}`).join(" · ")}`
+    : completed && match.mvpVotingStartedAt ? "MVP 투표 진행 중" : completed && match.mvp ? `기존 관리자 선정 MVP · ${match.mvp}` : "5 vs 5 · BO1";
   return (
     <article className={`match-card${featured ? " featured" : ""}${compact ? " compact" : ""}`}>
       <div className="match-meta"><span>{date}</span><span>{match.map}</span></div>
@@ -51,7 +54,7 @@ export function MatchCard({ match, featured = false, compact = false, teamRankSc
         <div className="versus">{completed ? <span className="score">{match.redScore}:{match.blueScore}</span> : "VS"}</div>
         <div className={`team blue${winner === "B" ? " winner" : ""}`}><small>B TEAM{winner === "B" ? " · WIN" : ""}{teamRankScores?.B === undefined ? null : <span className="team-rank-score"> · 랭크 {teamRankScores.B}점</span>}</small><strong>B팀</strong><span className="team-members">{match.teamBlue}</span></div>
       </div>
-      {!compact && <div className="match-footer"><span className="status">{completed ? "경기 종료" : "팀 배정 완료"}</span><span>{completed && match.mvp ? `MVP · ${match.mvp}` : "5 vs 5 · BO1"}</span></div>}
+      {!compact && <div className="match-footer"><span className="status">{completed ? "경기 종료" : "팀 배정 완료"}</span><span>{mvpText}</span></div>}
     </article>
   );
 }

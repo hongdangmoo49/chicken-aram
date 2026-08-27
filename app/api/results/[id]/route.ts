@@ -13,8 +13,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const matchId = Number((await params).id);
   const form = await request.formData();
-  const result = normalizeMatchResult({ playedAt: form.get("playedAt"), aScore: form.get("aScore"), bScore: form.get("bScore"), winner: form.get("winner"), mvpPlayerId: form.get("mvpPlayerId") });
-  if (!Number.isInteger(matchId) || matchId < 1 || !result) return redirectWithToast(request, "/results", "error", "점수, 승리팀, MVP와 경기 일시를 확인해 주세요.");
+  const result = normalizeMatchResult({ playedAt: form.get("playedAt"), aScore: form.get("aScore"), bScore: form.get("bScore"), winner: form.get("winner") });
+  if (!Number.isInteger(matchId) || matchId < 1 || !result) return redirectWithToast(request, "/results", "error", "점수, 승리팀과 경기 일시를 확인해 주세요.");
 
   try {
     await saveMatchResult({ matchId, actorId: user.id, ...result });
@@ -22,5 +22,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const errorId = reportError("result.save", error, { matchId });
     return redirectWithToast(request, "/results", "error", `대전 결과를 저장하지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);
   }
-  return redirectWithToast(request, "/results", "success", "대전 결과와 선수 승패를 저장했습니다.");
+  return redirectWithToast(request, "/results", "success", "대전 결과와 선수 승패를 저장하고 MVP 투표를 시작했습니다.");
 }
