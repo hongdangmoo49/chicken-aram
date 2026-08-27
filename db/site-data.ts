@@ -5,6 +5,7 @@ import { normalizePlayerPositions, type PlayerPosition } from "../lib/player-pos
 import { coachTier, type PlayerTierChange } from "../lib/player-tiers";
 import type { MatchResultInput, MatchWinner } from "../lib/match-results";
 import { currentMvpRound, topMvpCandidateIds } from "../lib/mvp-voting";
+import { calculatePlayerComparison } from "../lib/player-comparison";
 import { calculateRoundRecord } from "../lib/player-records";
 import { balanceTeams, playerPower } from "./team-balance";
 
@@ -58,6 +59,7 @@ export type MvpVotingContest = {
 };
 
 export type PlayerProfile = Player & { roundWins: number; roundLosses: number };
+export type PlayerComparison = ReturnType<typeof calculatePlayerComparison> & { viewerPlayerId: number };
 
 const CACHE_SECONDS = 300;
 const PLAYERS_CACHE_TAG = "players";
@@ -419,6 +421,27 @@ export async function setPlayerTiers(changes: PlayerTierChange[], actorId: strin
   const { error } = await admin.rpc("set_player_tiers", { changes, p_actor_id: actorId });
   if (error) fail("선수 티어 저장 실패", error);
   expirePublicCache(PLAYERS_CACHE_TAG, MATCHES_CACHE_TAG);
+}
+
+export async function getPlayerComparison(userId: string, targetPlayerId: number): Promise<PlayerComparison | null> {
+  const admin = createSupabaseAdminClient();
+  const { data: profile, error: profileError } = await admin.from("profiles").select("player_id").eq("id", userId).maybeSingle();
+  if (profileError) fail("비교할 내 선수 조회 실패", profileError);
+  if (!profile?.player_id) return null;
+  const viewerPlayerId = Number(profile.player_id);
+  if (viewerPlayerId === targetPlayerId) return { viewerPlayerId, sameTeam: { wins: 0, losses: 0 }, opponent: { wins: 0, losses: 0 } };
+
+  const { data, error } = await admin
+    .from("match_players")
+    .select("match_id,player_id,team,matches!inner(status,winner)")
+    .in("player_id", [viewerPlayerId, targetPlayerId])
+    .eq("matches.status", "completed");
+  if (error) fail("선수 상대 전적 조회 실패", error);
+  const participations = (data ?? []).map((entry) => {
+    const match = entry.matches as unknown as { winner: MatchWinner | null };
+    return { matchId: Number(entry.match_id), playerId: Number(entry.player_id), team: entry.team as MatchWinner, winner: match.winner };
+  });
+  return { viewerPlayerId, ...calculatePlayerComparison(viewerPlayerId, targetPlayerId, participations) };
 }
 
 export async function saveMatchResult(input: MatchResultInput & { matchId: number; actorId: string }) {

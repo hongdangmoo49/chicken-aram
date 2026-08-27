@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type DragEvent } from "react";
+import Link from "next/link";
 import type { Player } from "../../db/site-data";
 import { adjustRankPointsForTierChange, needsSuperAdminRankReview, playerTierLabel, playerTiers } from "../../lib/player-tiers";
 import { PlayerAvatar, PlayerPositions } from "../player-ui";
@@ -74,7 +75,7 @@ export function TierDragBoard({ players }: { players: Player[] }) {
   }
 
   function handleDragStart(event: DragEvent<HTMLElement>, player: Player) {
-    if (saving || (event.target as HTMLElement).closest(".tier-admin-form")) return event.preventDefault();
+    if (saving || (event.target as HTMLElement).closest(".tier-admin-form, a")) return event.preventDefault();
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", String(player.id));
     setDraggingId(player.id);
@@ -114,8 +115,8 @@ export function TierDragBoard({ players }: { players: Player[] }) {
       {playerTiers.map((tier) => {
         const tierPlayers = arrangement[tier].map((id) => players.find((player) => player.id === id)).filter((player): player is Player => Boolean(player)).sort((a, b) => displayedPoints(b, tier) - displayedPoints(a, tier));
         return <section className={`tier-section tier-${tier}`} data-tier={tier} key={tier} onDragOver={(event) => handleDragOver(event, tier)} onDrop={(event) => handleDrop(event, tier)}><div className="tier-label"><div><strong>{playerTierLabel(tier)}</strong><span>{tierPlayers.length} PLAYERS</span></div></div><div className="tier-players">{tierPlayers.map((player) => <article className={`tier-player-card${draggingId === player.id ? " dragging" : ""}`} data-player-id={player.id} draggable={admin} key={player.id} onDragEnd={clearDrag} onDragStart={(event) => handleDragStart(event, player)} title={admin ? "원하는 티어로 드래그" : undefined}>
-          <PlayerAvatar player={player} />
-          <div className="tier-player-info"><strong>{player.nickname}</strong><span>{player.wins}승 {player.losses}패</span><PlayerPositions positions={player.positions} /></div>
+          {admin ? <Link aria-label={`${player.nickname} 상대 전적 보기`} className="tier-player-avatar-link" href={`/players/${player.id}`}><PlayerAvatar player={player} /></Link> : <PlayerAvatar player={player} />}
+          <div className="tier-player-info"><strong>{admin ? <Link className="tier-player-name-link" href={`/players/${player.id}`}>{player.nickname}</Link> : player.nickname}</strong><span>{player.wins}승 {player.losses}패</span><PlayerPositions positions={player.positions} /></div>
           <div className="tier-player-rate"><strong>{displayedPoints(player, tier)}점</strong><span>티어 점수 {admin && needsSuperAdminRankReview(tier, displayedPoints(player, tier)) && <span aria-label="슈퍼관리자 확인 필요" className="rank-review-warning" title="슈퍼관리자 확인 필요.">!</span>}</span></div>
           {admin && <div className="tier-admin-form"><label htmlFor={`tier-${player.id}`}>티어 조정</label><select disabled={saving} id={`tier-${player.id}`} value={tier} onChange={(event) => movePlayer(player.id, Number(event.target.value))}>{playerTiers.map((value) => <option value={value} key={value}>{playerTierLabel(value)}</option>)}</select>{superAdmin && <><button className="button ghost rank-points-edit" disabled={saving} onClick={() => setEditingPointsId((current) => current === player.id ? null : player.id)} type="button">RP 수정</button>{editingPointsId === player.id && <label className="rank-points-field" htmlFor={`points-${player.id}`}><span>RP</span><input defaultValue={pointEdits[player.id] ?? player.points} id={`points-${player.id}`} max={1_000_000} min={-1_000_000} onChange={(event) => { if (event.target.value) editPoints(player, Number(event.target.value)); }} step="1" type="number" /></label>}</>}</div>}
         </article>)}</div></section>;

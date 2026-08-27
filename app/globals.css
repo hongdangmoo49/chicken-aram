@@ -156,6 +156,9 @@ button, input, select { font: inherit; }
 .tier-player-card[draggable="true"]:hover { border-color: #66503f; }
 .tier-player-card.dragging { opacity: .35; transform: scale(.98); cursor: grabbing; }
 .tier-player-card .avatar { width: 64px; height: 64px; }
+.tier-player-avatar-link { display: block; border-radius: 50%; }
+.tier-player-name-link { color: inherit; text-decoration: none; }
+.tier-player-avatar-link:hover + .tier-player-info .tier-player-name-link, .tier-player-name-link:hover { color: var(--accent); text-decoration: underline; }
 .tier-player-info, .tier-player-rate { display: grid; gap: 5px; }
 .tier-player-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; }
 .tier-player-info span, .tier-player-rate span { color: var(--muted); font-size: 11px; }
@@ -233,6 +236,15 @@ button, input, select { font: inherit; }
 .profile-identity .round-record { margin-top: 6px; color: #ffad72; }
 .round-record strong { font-size: 14px; }
 .profile-forms { display: grid; gap: 24px; }
+.player-detail-back { width: fit-content; margin-bottom: 14px; }
+.player-detail-card { display: grid; gap: 28px; }
+.player-detail-identity { display: flex; gap: 18px; align-items: center; }
+.player-detail-identity h2 { margin: 8px 0 6px; font-size: 28px; }
+.player-detail-identity p { margin: 0 0 8px; color: var(--muted); }
+.player-comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.player-comparison-grid article { display: grid; gap: 8px; padding: 20px; border: 1px solid var(--line); border-radius: 11px; background: #0e1116; }
+.player-comparison-grid span, .player-comparison-grid b { color: var(--muted); font-size: 11px; }
+.player-comparison-grid strong { font-size: 24px; }
 .position-form { display: grid; gap: 12px; }
 .position-form > div:first-child { display: flex; justify-content: space-between; align-items: center; }
 .position-form > div:first-child strong { font-size: 12px; }
@@ -349,6 +361,7 @@ button, input, select { font: inherit; }
   .hero-copy p { max-width: 600px; }
   .dashboard-grid, .schedule-grid { grid-template-columns: 1fr; }
   .profile-card { grid-template-columns: 1fr; }
+  .player-comparison-grid { grid-template-columns: 1fr; }
   .auth-grid { grid-template-columns: 1fr; }
   .admin-panel { position: static; }
   .page-intro { display: grid; }
