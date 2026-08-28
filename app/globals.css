@@ -240,6 +240,8 @@ button, input, select { font: inherit; }
 .telegram-link strong { font-size: 12px; }
 .telegram-link p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
 .telegram-link form { flex: 0 0 auto; }
+.telegram-link-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
+.telegram-link-message { flex-basis: 100%; margin: 0; color: #ffad72; font-size: 11px; text-align: right; }
 .player-detail-back { width: fit-content; margin-bottom: 14px; }
 .player-detail-card { display: grid; gap: 28px; }
 .player-detail-identity { display: flex; gap: 18px; align-items: center; }
@@ -404,6 +406,7 @@ button, input, select { font: inherit; }
   .member-records { grid-template-columns: 1fr; }
   .telegram-link { align-items: stretch; flex-direction: column; }
   .telegram-link .button { width: 100%; }
+  .telegram-link-actions { display: grid; }
   .page-wrap { width: calc(100% - 28px); padding: 34px 0 100px; }
   .hero h1, .page-intro h1 { font-size: 46px; }
   .hero-copy p { font-size: 15px; }

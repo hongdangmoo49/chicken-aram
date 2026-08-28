@@ -11,6 +11,7 @@ test("rate limits authentication and every custom write endpoint", async () => {
     "app/api/profile/positions/route.ts",
     "app/api/profile/thumbnail/route.ts",
     "app/api/profile/telegram-link/route.ts",
+    "app/api/profile/telegram-unlink/route.ts",
     "app/api/admin/player-tier/route.ts",
     "app/api/admin/role/route.ts",
     "app/api/schedule/route.ts",

@@ -27,6 +27,15 @@ export async function getTelegramConnection(profileId: string) {
   return data?.telegram_user_id ? { userId: Number(data.telegram_user_id), username: data.telegram_username as string | null } : null;
 }
 
+export async function unlinkTelegramAccount(profileId: string) {
+  const admin = createSupabaseAdminClient();
+  const [{ error: profileError }, { error: tokenError }] = await Promise.all([
+    admin.from("profiles").update({ telegram_user_id: null, telegram_username: null }).eq("id", profileId),
+    admin.from("telegram_link_tokens").delete().eq("profile_id", profileId),
+  ]);
+  if (profileError || tokenError) fail("Telegram 계정 연동 해제 실패", profileError ?? tokenError);
+}
+
 export async function createTelegramLink(profileId: string) {
   const token = randomBytes(24).toString("base64url");
   const now = new Date();

@@ -1,18 +1,17 @@
 import { createTelegramLink } from "../../../../db/telegram-recruitments";
 import { reportError } from "../../../../lib/observability";
 import { takeRateLimit } from "../../../../lib/rate-limit";
-import { redirectWithToast } from "../../../../lib/toast-response";
 import { getCurrentUser } from "../../../auth";
 
-export async function POST(request: Request) {
+export async function POST() {
   const user = await getCurrentUser();
-  if (!user) return redirectWithToast(request, "/login", "error", "로그인이 필요합니다.");
-  if (!(await takeRateLimit("telegram-link", user.id, 5, 600))) return redirectWithToast(request, "/profile", "error", "연동 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
+  if (!user) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
+  if (!(await takeRateLimit("telegram-link", user.id, 5, 600))) return Response.json({ error: "연동 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, { status: 429 });
   try {
     const token = await createTelegramLink(user.id);
-    return Response.redirect(`https://t.me/chicken_aram_bot?start=link_${token}`, 303);
+    return Response.json({ url: `https://t.me/chicken_aram_bot?start=link_${token}` });
   } catch (error) {
     reportError("telegram.link.create", error, { userId: user.id });
-    return redirectWithToast(request, "/profile", "error", "텔레그램 연동 링크를 만들지 못했습니다.");
+    return Response.json({ error: "텔레그램 연동 링크를 만들지 못했습니다." }, { status: 500 });
   }
 }

@@ -38,13 +38,15 @@ test("lists today's recruitments including full games", () => {
 });
 
 test("secures and persists webhook updates", async () => {
-  const [route, database, migration, linkMigration, profile, linkRoute, setup] = await Promise.all([
+  const [route, database, migration, linkMigration, profile, linkButton, linkRoute, unlinkRoute, setup] = await Promise.all([
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/telegram-recruitments.ts", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608280027_add_telegram_recruitments.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608280028_link_telegram_accounts.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/profile/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/profile/telegram-app-link.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/profile/telegram-link/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/profile/telegram-unlink/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../scripts/setup-telegram-bot.mjs", import.meta.url), "utf8"),
   ]);
   assert.match(route, /x-telegram-bot-api-secret-token/);
@@ -67,10 +69,15 @@ test("secures and persists webhook updates", async () => {
   assert.match(linkMigration, /telegram_link_tokens/);
   assert.match(linkMigration, /consume_telegram_link/);
   assert.match(linkMigration, /grant execute .* to service_role/);
-  assert.match(profile, /Telegram 앱으로 연동/);
+  assert.match(profile, /텔레그램 앱 간편 연동/);
+  assert.match(linkButton, /Telegram 앱으로 연동/);
+  assert.match(linkButton, /window\.location\.assign/);
+  assert.match(linkButton, /telegram-unlink/);
   assert.match(linkRoute, /export async function POST/);
   assert.match(linkRoute, /https:\/\/t\.me\/chicken_aram_bot\?start=link_/);
+  assert.match(linkRoute, /Response\.json/);
   assert.match(linkRoute, /createTelegramLink/);
   assert.match(linkRoute, /takeRateLimit/);
+  assert.match(unlinkRoute, /unlinkTelegramAccount/);
   assert.match(setup, /allowed_updates: \["message", "callback_query"\]/);
 });
