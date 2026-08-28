@@ -1,6 +1,6 @@
 export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "help" | "start"; argument: string };
 export type RecruitmentVoteView = { telegramUserId: number; displayName: string; username: string | null };
-export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full"; targetCount: number; votes: RecruitmentVoteView[] };
+export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full"; targetCount: number; matchId: number | null; votes: RecruitmentVoteView[] };
 
 export function parseTelegramCommand(text: string): TelegramCommand | null {
   const [raw = "", ...arguments_] = text.trim().split(/\s+/);
@@ -20,6 +20,12 @@ export function parseVoteHour(value: string) {
   return hour >= 1 && hour <= 24 ? hour : null;
 }
 
+export function recruitmentScheduledAt(scheduledDate: string, hour: number) {
+  const midnight = new Date(`${scheduledDate}T00:00:00+09:00`);
+  midnight.setTime(midnight.getTime() + hour * 60 * 60 * 1000);
+  return midnight.toISOString();
+}
+
 function voterName(vote: RecruitmentVoteView) {
   return vote.username ? `${vote.displayName} (@${vote.username})` : vote.displayName;
 }
@@ -29,6 +35,7 @@ export function formatRecruitment(recruitment: RecruitmentView) {
   return [
     `📢 ${recruitment.scheduledDate} ${recruitment.hour}시 치증 모집`,
     `${recruitment.status === "full" ? "✅ 모집 완료" : "모집 중"} · ${recruitment.votes.length}/${recruitment.targetCount}명`,
+    ...(recruitment.matchId ? ["🏟 대전 예정 생성됨"] : []),
     "",
     names || "아직 참여자가 없습니다.",
     "",

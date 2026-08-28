@@ -1,8 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
-import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
+import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, createScheduleFromRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
 import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
+import { siteUrl } from "../../../../lib/site-url";
 
 type TelegramMessage = {
   message_id: number;
@@ -26,14 +27,20 @@ function displayName(user: NonNullable<TelegramMessage["from"]>) {
 }
 
 function listKeyboard(recruitments: RecruitmentView[]): TelegramInlineKeyboard {
-  return { inline_keyboard: recruitments.map((recruitment) => [{ text: `${recruitment.hour}시${recruitment.status === "full" ? " · 모집 완료" : ""} · ${recruitment.votes.length}/${recruitment.targetCount}명`, callback_data: `recruit:view:${recruitment.id}` }]) };
+  return { inline_keyboard: recruitments.map((recruitment) => [{ text: `${recruitment.hour}시${recruitment.matchId ? " · 대전 생성됨" : recruitment.status === "full" ? " · 모집 완료" : ""} · ${recruitment.votes.length}/${recruitment.targetCount}명`, callback_data: `recruit:view:${recruitment.id}` }]) };
 }
 
-function detailKeyboard(recruitmentId: number): TelegramInlineKeyboard {
-  return { inline_keyboard: [[
-    { text: "✅ 참여하기", callback_data: `recruit:vote:${recruitmentId}` },
-    { text: "❌ 참여 취소", callback_data: `recruit:cancel:${recruitmentId}` },
-  ], [{ text: "⬅️ 오늘 모집 목록", callback_data: "recruit:list" }]] };
+function detailKeyboard(recruitment: RecruitmentView): TelegramInlineKeyboard {
+  const rows: TelegramInlineKeyboard["inline_keyboard"] = [];
+  if (recruitment.matchId) rows.push([{ text: "🏟 대전 예정에서 확인", url: `${siteUrl}/schedule#match-${recruitment.matchId}` }]);
+  else if (recruitment.status === "full") rows.push([{ text: "🏟 대전 예정 생성", callback_data: `recruit:schedule:${recruitment.id}` }], [{ text: "❌ 참여 취소", callback_data: `recruit:cancel:${recruitment.id}` }]);
+  else rows.push([{ text: "✅ 참여하기", callback_data: `recruit:vote:${recruitment.id}` }, { text: "❌ 참여 취소", callback_data: `recruit:cancel:${recruitment.id}` }]);
+  rows.push([{ text: "⬅️ 오늘 모집 목록", callback_data: "recruit:list" }]);
+  return { inline_keyboard: rows };
+}
+
+function createdScheduleText(result: Extract<Awaited<ReturnType<typeof createScheduleFromRecruitment>>, { status: "created" }>) {
+  return [`✅ 대전 예정 생성 완료`, "", `A팀 · 랭크 ${result.teamAScore}점`, result.teamA.map((player) => player.nickname).join(" · "), "", `B팀 · 랭크 ${result.teamBScore}점`, result.teamB.map((player) => player.nickname).join(" · "), "", `팀 점수 차이 ${result.difference}점`].join("\n");
 }
 
 async function handleMessage(message: TelegramMessage) {
@@ -62,7 +69,7 @@ async function handleMessage(message: TelegramMessage) {
     if (!current) throw new Error("Created Telegram recruitment was not found.");
     if (!created) return void await sendTelegramMessage(chatId, `이미 진행 중인 모집이 있습니다.\n\n${formatRecruitment(current.view)}`);
     try {
-      const sent = await sendTelegramMessage(chatId, formatRecruitment(current.view), detailKeyboard(current.view.id));
+      const sent = await sendTelegramMessage(chatId, formatRecruitment(current.view), detailKeyboard(current.view));
       if (!sent) throw new Error("Telegram recruitment message was not returned.");
       await setRecruitmentMessage(Number(recruitment.id), sent.message_id);
     } catch (error) {
@@ -77,11 +84,12 @@ async function handleMessage(message: TelegramMessage) {
     if (hour === null) return void await sendTelegramMessage(chatId, `사용법: /${command.name} 9`);
     const result = await saveRecruitmentVote({ chatId, scheduledDate: todayInKorea(), telegramUserId: userId, displayName: displayName(message.from), username: message.from.username ?? null, hour, cancel: command.name === "cancle" });
     if (!result) return void await sendTelegramMessage(chatId, `오늘 ${hour}시에 진행 중인 모집이 없습니다. 관리자가 /create ${hour}로 만들어야 합니다.`);
+    if (result.locked) return void await sendTelegramMessage(chatId, "대전 예정이 이미 생성되어 참가자를 변경할 수 없습니다. 사이트에서 수정해 주세요.");
     if (!result.accepted) return void await sendTelegramMessage(chatId, `오늘 ${hour}시 모집은 이미 10명이 모두 모였습니다.`);
     const text = formatRecruitment(result.view);
-    if (result.row.message_id) await editTelegramMessage(chatId, Number(result.row.message_id), text, detailKeyboard(result.view.id));
+    if (result.row.message_id) await editTelegramMessage(chatId, Number(result.row.message_id), text, detailKeyboard(result.view));
     else await sendTelegramMessage(chatId, text);
-    if (result.becameFull) await sendTelegramMessage(chatId, `✅ 오늘 ${hour}시 치증 참가자 10명이 모두 모였습니다.`);
+    if (result.becameFull) await sendTelegramMessage(chatId, `✅ 오늘 ${hour}시 치증 참가자 10명이 모두 모였습니다.\n관리자가 대전 예정을 생성해 주세요.`, detailKeyboard(result.view));
     return;
   }
 
@@ -101,26 +109,49 @@ async function handleCallback(query: TelegramCallbackQuery) {
     return void await answerTelegramCallback(query.id);
   }
 
-  const match = /^recruit:(view|vote|cancel):(\d+)$/.exec(query.data);
+  const match = /^recruit:(view|vote|cancel|schedule):(\d+)$/.exec(query.data);
   if (!match) return void await answerTelegramCallback(query.id, "잘못된 모집 버튼입니다.");
   const action = match[1];
   const recruitmentId = Number(match[2]);
   if (action === "view") {
     const recruitment = await getRecruitmentById(chatId, scheduledDate, recruitmentId);
     if (!recruitment) return void await answerTelegramCallback(query.id, "오늘 진행 중인 모집이 아닙니다.");
-    await editTelegramMessage(chatId, message.message_id, formatRecruitment(recruitment.view), detailKeyboard(recruitmentId));
+    await editTelegramMessage(chatId, message.message_id, formatRecruitment(recruitment.view), detailKeyboard(recruitment.view));
     return void await answerTelegramCallback(query.id);
+  }
+
+  if (action === "schedule") {
+    if (!(await isTelegramChatAdmin(chatId, query.from.id))) return void await answerTelegramCallback(query.id, "Telegram 그룹 관리자만 생성할 수 있습니다.");
+    const result = await createScheduleFromRecruitment({ chatId, scheduledDate, recruitmentId, actorTelegramUserId: query.from.id });
+    if (result.status === "not_found") return void await answerTelegramCallback(query.id, "오늘 모집을 찾을 수 없습니다.");
+    if (result.status === "not_full") return void await answerTelegramCallback(query.id, "참가자 10명이 모두 모여야 합니다.");
+    if (result.status === "not_authorized") return void await answerTelegramCallback(query.id, "사이트 관리자 계정과 Telegram을 연동해 주세요.");
+    if (result.status === "invalid_participants") {
+      await sendTelegramMessage(chatId, [`⚠️ 대전을 생성할 수 없습니다.`, "", "사이트 연동 또는 선수 확인 필요:", ...result.participants.map((participant) => `- ${participant}`)].join("\n"), { inline_keyboard: [[{ text: "🔗 사이트에서 Telegram 연동", url: `${siteUrl}/profile` }]] });
+      return void await answerTelegramCallback(query.id, "연동되지 않은 참가자가 있습니다.");
+    }
+    const current = await getRecruitmentById(chatId, scheduledDate, recruitmentId);
+    if (current) {
+      const text = formatRecruitment(current.view);
+      const keyboard = detailKeyboard(current.view);
+      if (current.row.message_id) await editTelegramMessage(chatId, Number(current.row.message_id), text, keyboard);
+      if (Number(current.row.message_id) !== message.message_id) await editTelegramMessage(chatId, message.message_id, text, keyboard);
+    }
+    if (result.status === "already_created") return void await answerTelegramCallback(query.id, "이미 대전 예정이 생성되었습니다.");
+    await answerTelegramCallback(query.id, "대전 예정을 생성했습니다.");
+    return void await sendTelegramMessage(chatId, createdScheduleText(result), { inline_keyboard: [[{ text: "🌐 사이트에서 확인", url: `${siteUrl}/schedule#match-${result.matchId}` }]] });
   }
 
   const result = await saveRecruitmentVoteById({ chatId, scheduledDate, recruitmentId, telegramUserId: query.from.id, displayName: displayName(query.from), username: query.from.username ?? null, cancel: action === "cancel" });
   if (!result) return void await answerTelegramCallback(query.id, "오늘 진행 중인 모집이 아닙니다.");
+  if (result.locked) return void await answerTelegramCallback(query.id, "대전 예정이 생성되어 참가자를 변경할 수 없습니다.");
   if (!result.accepted) return void await answerTelegramCallback(query.id, "이미 10명이 모두 모였습니다.");
   const text = formatRecruitment(result.view);
-  const keyboard = detailKeyboard(recruitmentId);
+  const keyboard = detailKeyboard(result.view);
   if (result.row.message_id) await editTelegramMessage(chatId, Number(result.row.message_id), text, keyboard);
   if (Number(result.row.message_id) !== message.message_id) await editTelegramMessage(chatId, message.message_id, text, keyboard);
   await answerTelegramCallback(query.id, action === "cancel" ? "참여를 취소했습니다." : "참여했습니다.");
-  if (result.becameFull) await sendTelegramMessage(chatId, `✅ 오늘 ${result.view.hour}시 치증 참가자 10명이 모두 모였습니다.`);
+  if (result.becameFull) await sendTelegramMessage(chatId, `✅ 오늘 ${result.view.hour}시 치증 참가자 10명이 모두 모였습니다.\n관리자가 대전 예정을 생성해 주세요.`, detailKeyboard(result.view));
 }
 
 export async function POST(request: Request) {

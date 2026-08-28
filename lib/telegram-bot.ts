@@ -1,7 +1,8 @@
 import "server-only";
 
 type TelegramResponse<T> = { ok: boolean; result?: T; description?: string };
-export type TelegramInlineKeyboard = { inline_keyboard: { text: string; callback_data: string }[][] };
+type TelegramInlineButton = { text: string; callback_data: string } | { text: string; url: string };
+export type TelegramInlineKeyboard = { inline_keyboard: TelegramInlineButton[][] };
 
 function botToken() {
   const token = process.env.TELEGRAM_BOT_TOKEN;

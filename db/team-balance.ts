@@ -7,6 +7,22 @@ export type BalancePlayer = {
   points: number;
 };
 
+export type LinkedTelegramPlayer = BalancePlayer & { telegramUserId: number; active: boolean };
+
+export function prepareTelegramTeams(votes: { telegramUserId: number; displayName: string; username: string | null }[], linkedPlayers: LinkedTelegramPlayer[]) {
+  const playerByTelegramId = new Map(linkedPlayers.map((player) => [player.telegramUserId, player]));
+  const invalidParticipants: string[] = [];
+  const players: BalancePlayer[] = [];
+  for (const vote of votes) {
+    const player = playerByTelegramId.get(vote.telegramUserId);
+    if (!player?.active || player.tier === 6) invalidParticipants.push(vote.username ? `${vote.displayName} (@${vote.username})` : vote.displayName);
+    else players.push(player);
+  }
+  if (invalidParticipants.length || players.length !== 10 || new Set(players.map((player) => player.id)).size !== 10) return { ok: false as const, invalidParticipants: invalidParticipants.length ? invalidParticipants : votes.map((vote) => vote.displayName) };
+  const { teamA, teamB, difference } = balanceTeams(players, []);
+  return { ok: true as const, teamA, teamB, difference, teamAScore: teamA.reduce((total, player) => total + playerPower(player), 0), teamBScore: teamB.reduce((total, player) => total + playerPower(player), 0) };
+}
+
 export function playerPower(player: Pick<BalancePlayer, "tier" | "points">) {
   return (5 - player.tier) * 50 + player.points;
 }

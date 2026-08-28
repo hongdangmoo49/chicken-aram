@@ -31,7 +31,7 @@ export default async function SchedulePage() {
       <div className="match-list">{upcoming.length ? upcoming.map((match) => {
         const matchMembers = members.filter((member) => member.matchId === match.id);
         const initialGroups = Object.fromEntries(matchMembers.filter((member) => member.separatedGroup !== null).map((member) => [member.playerId, member.separatedGroup!])) as Record<number, number>;
-        return <div className="scheduled-match" key={match.id}>
+        return <div className="scheduled-match" id={`match-${match.id}`} key={match.id}>
         <MatchCard match={match} teamRankScores={calculateTeamRankScores(matchMembers)} />
         <AdminOnly><div className="match-admin-actions">
           <details><summary>수정 · 선수 교체 · 팀 재편성</summary><form action={`/api/schedule/${match.id}`} className="match-edit-form" method="post">

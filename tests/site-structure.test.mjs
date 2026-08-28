@@ -76,6 +76,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(scheduleMutation, /normalizeTeamPlayers/);
   assert.match(scheduleMutation, /팀 선수를 교체했습니다/);
   assert.match(schedulePage, /calculateTeamRankScores/);
+  assert.match(schedulePage, /id=\{`match-\$\{match\.id\}`\}/);
   assert.match(schedulePage, /teamRankScores/);
   assert.match(results, /teamRankScores=\{rankScores/);
   assert.match(ui, /team-rank-score/);
