@@ -19,5 +19,5 @@ await telegram("setMyCommands", { commands: [
   { command: "list", description: "현재 모집과 참여자 보기" },
   { command: "help", description: "치증봇 사용법" },
 ] });
-await telegram("setWebhook", { url: `${siteUrl.replace(/\/$/, "")}/api/telegram/webhook`, secret_token: secret, allowed_updates: ["message"] });
+await telegram("setWebhook", { url: `${siteUrl.replace(/\/$/, "")}/api/telegram/webhook`, secret_token: secret, allowed_updates: ["message", "callback_query"] });
 process.stdout.write("치증봇 webhook과 명령어 설정을 완료했습니다.\n");

@@ -1,5 +1,5 @@
-export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "help"; argument: string };
-export type RecruitmentVoteView = { displayName: string; username: string | null };
+export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "help" | "start"; argument: string };
+export type RecruitmentVoteView = { telegramUserId: number; displayName: string; username: string | null };
 export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full"; targetCount: number; votes: RecruitmentVoteView[] };
 
 export function parseTelegramCommand(text: string): TelegramCommand | null {
@@ -7,7 +7,11 @@ export function parseTelegramCommand(text: string): TelegramCommand | null {
   if (!raw.startsWith("/")) return null;
   const name = raw.slice(1).split("@")[0].toLowerCase();
   if (name !== "create" && name !== "vote" && name !== "cancle" && name !== "list" && name !== "help" && name !== "start") return null;
-  return { name: name === "start" ? "help" : name, argument: arguments_.join(" ") };
+  return { name, argument: arguments_.join(" ") } as TelegramCommand;
+}
+
+export function parseTelegramLinkToken(value: string) {
+  return /^link_([A-Za-z0-9_-]{32})$/.exec(value)?.[1] ?? null;
 }
 
 export function parseVoteHour(value: string) {
@@ -32,6 +36,14 @@ export function formatRecruitment(recruitment: RecruitmentView) {
     `참여취소: /cancle ${recruitment.hour}`,
     "현재 목록: /list",
   ].join("\n");
+}
+
+export function formatRecruitmentList(recruitments: RecruitmentView[]) {
+  return recruitments.length ? `오늘 진행 중인 치증 모집 ${recruitments.length}개\n시간을 선택하면 참가자 확인과 투표가 가능합니다.` : "오늘 진행 중인 치증 모집이 없습니다.";
+}
+
+export function votingRecruitments(recruitments: RecruitmentView[]) {
+  return recruitments.filter((recruitment) => recruitment.status === "open");
 }
 
 export function helpMessage() {
