@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { claimTelegramUpdate, createRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
-import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseVoteHour, todayInKorea, votingRecruitments, type RecruitmentView } from "../../../../lib/telegram-commands";
+import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
 
 type TelegramMessage = {
@@ -26,7 +26,7 @@ function displayName(user: NonNullable<TelegramMessage["from"]>) {
 }
 
 function listKeyboard(recruitments: RecruitmentView[]): TelegramInlineKeyboard {
-  return { inline_keyboard: recruitments.map((recruitment) => [{ text: `${recruitment.hour}시 · ${recruitment.votes.length}/${recruitment.targetCount}명`, callback_data: `recruit:view:${recruitment.id}` }]) };
+  return { inline_keyboard: recruitments.map((recruitment) => [{ text: `${recruitment.hour}시${recruitment.status === "full" ? " · 모집 완료" : ""} · ${recruitment.votes.length}/${recruitment.targetCount}명`, callback_data: `recruit:view:${recruitment.id}` }]) };
 }
 
 function detailKeyboard(recruitmentId: number): TelegramInlineKeyboard {
@@ -78,7 +78,7 @@ async function handleMessage(message: TelegramMessage) {
   }
 
   const recruitments = await listRecruitments(chatId, todayInKorea());
-  const views = votingRecruitments(recruitments.map(({ view }) => view));
+  const views = recruitments.map(({ view }) => view);
   return void await sendTelegramMessage(chatId, formatRecruitmentList(views), views.length ? listKeyboard(views) : undefined);
 }
 
@@ -88,7 +88,7 @@ async function handleCallback(query: TelegramCallbackQuery) {
   const chatId = message.chat.id;
   const scheduledDate = todayInKorea();
   if (query.data === "recruit:list") {
-    const views = votingRecruitments((await listRecruitments(chatId, scheduledDate)).map(({ view }) => view));
+    const views = (await listRecruitments(chatId, scheduledDate)).map(({ view }) => view);
     await editTelegramMessage(chatId, message.message_id, formatRecruitmentList(views), listKeyboard(views));
     return void await answerTelegramCallback(query.id);
   }

@@ -240,7 +240,6 @@ button, input, select { font: inherit; }
 .telegram-link strong { font-size: 12px; }
 .telegram-link p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
 .telegram-widget { flex: 0 0 auto; min-width: 216px; text-align: center; }
-.telegram-widget > p { margin-top: 6px; color: #ffad72; }
 .player-detail-back { width: fit-content; margin-bottom: 14px; }
 .player-detail-card { display: grid; gap: 28px; }
 .player-detail-identity { display: flex; gap: 18px; align-items: center; }

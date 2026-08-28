@@ -10,6 +10,24 @@ export type TelegramLoginPayload = {
   hash: string;
 };
 
+function telegramStateSignature(profileId: string, timestamp: number, botToken: string) {
+  return createHmac("sha256", botToken).update(`${profileId}:${timestamp}`).digest("base64url");
+}
+
+export function createTelegramLoginState(profileId: string, botToken: string, now = Math.floor(Date.now() / 1000)) {
+  if (!botToken) throw new Error("TELEGRAM_BOT_TOKEN is not configured.");
+  return `${now}.${telegramStateSignature(profileId, now, botToken)}`;
+}
+
+export function verifyTelegramLoginState(state: string, profileId: string, botToken: string, now = Math.floor(Date.now() / 1000)) {
+  const [rawTimestamp, signature, ...rest] = state.split(".");
+  const timestamp = Number(rawTimestamp);
+  if (rest.length || !Number.isSafeInteger(timestamp) || timestamp < now - 600 || timestamp > now + 60 || !signature || !botToken) return false;
+  const expected = Buffer.from(telegramStateSignature(profileId, timestamp, botToken));
+  const actual = Buffer.from(signature);
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
+}
+
 export function verifyTelegramLogin(value: unknown, botToken: string, now = Math.floor(Date.now() / 1000)) {
   if (!value || typeof value !== "object" || Array.isArray(value) || !botToken) return null;
   const input = value as Record<string, unknown>;

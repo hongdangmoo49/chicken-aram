@@ -35,11 +35,7 @@ export function formatRecruitment(recruitment: RecruitmentView) {
 }
 
 export function formatRecruitmentList(recruitments: RecruitmentView[]) {
-  return recruitments.length ? `오늘 진행 중인 치증 모집 ${recruitments.length}개\n시간을 선택하면 참가자 확인과 투표가 가능합니다.` : "오늘 진행 중인 치증 모집이 없습니다.";
-}
-
-export function votingRecruitments(recruitments: RecruitmentView[]) {
-  return recruitments.filter((recruitment) => recruitment.status === "open");
+  return recruitments.length ? `오늘 치증 모집 ${recruitments.length}개\n시간을 선택하면 참가자를 확인할 수 있습니다.` : "오늘 치증 모집이 없습니다.";
 }
 
 export function helpMessage() {

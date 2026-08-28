@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash, createHmac } from "node:crypto";
 import test from "node:test";
-import { verifyTelegramLogin } from "../lib/telegram-login.ts";
+import { createTelegramLoginState, verifyTelegramLogin, verifyTelegramLoginState } from "../lib/telegram-login.ts";
 
 function signedPayload(token, now) {
   const payload = { auth_date: now, first_name: "재미", id: 123456789, username: "zaemi" };
@@ -17,4 +17,13 @@ test("verifies fresh Telegram login signatures and rejects tampering", () => {
   assert.deepEqual(verifyTelegramLogin(payload, token, now), { userId: 123456789, username: "zaemi" });
   assert.equal(verifyTelegramLogin({ ...payload, username: "attacker" }, token, now), null);
   assert.equal(verifyTelegramLogin(payload, token, now + 601), null);
+});
+
+test("binds the Telegram callback state to the signed-in profile", () => {
+  const now = 1_788_000_000;
+  const token = "123456:bot-secret";
+  const state = createTelegramLoginState("profile-a", token, now);
+  assert.equal(verifyTelegramLoginState(state, "profile-a", token, now), true);
+  assert.equal(verifyTelegramLoginState(state, "profile-b", token, now), false);
+  assert.equal(verifyTelegramLoginState(state, "profile-a", token, now + 601), false);
 });
