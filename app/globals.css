@@ -265,16 +265,26 @@ button, input, select { font: inherit; }
 .member-heading h2 { margin: 7px 0 0; font-size: 24px; }
 .member-heading p { max-width: 520px; margin: 0; color: var(--muted); font-size: 12px; }
 .member-save-bar { top: 82px; margin: 18px 0 0; }
+.member-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-top: 18px; }
+.member-search { display: grid; gap: 6px; width: min(100%, 420px); color: var(--muted); font-size: 11px; font-weight: 700; }
+.member-search input { width: 100%; height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: #0e1116; color: var(--text); }
+.member-search input:focus { border-color: var(--accent); }
+.member-count { color: var(--muted); font-size: 11px; }
 .member-list { display: grid; }
-.member-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; min-height: 70px; border-bottom: 1px solid var(--line); }
+.member-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; min-height: 70px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .member-row:last-child { border-bottom: 0; }
 .member-row > div { display: grid; gap: 4px; }
 .member-row > div span { color: var(--muted); font-size: 11px; }
+.member-row .member-name-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.member-name-line > strong { font-size: 15px; }
+.member-email { overflow: hidden; text-overflow: ellipsis; }
 .member-row .telegram-status { width: fit-content; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-weight: 800; }
 .member-row .telegram-status.linked { border-color: #2f6849; color: #8ee3b3; }
 .member-row .telegram-status.unlinked { color: var(--muted); }
-.member-records { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 3px; }
-.member-records strong { color: var(--text); }
+.member-records { display: grid; grid-template-columns: repeat(3, minmax(120px, auto)); gap: 7px; margin-top: 7px; }
+.member-records > span { display: grid; gap: 3px; padding: 8px 10px; border-radius: 8px; background: #0e1116; }
+.member-records small { color: var(--muted); font-size: 9px; font-weight: 800; }
+.member-records strong { color: var(--text); font-size: 11px; }
 .member-row > .member-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: start; gap: 8px; }
 .member-row select { min-width: 160px; min-height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #0e1116; color: var(--text); }
 .role-badge { padding: 7px 10px; border: 1px solid #9f5626; border-radius: 999px; color: var(--accent); font-size: 11px; font-weight: 800; }
@@ -285,6 +295,7 @@ button, input, select { font: inherit; }
 .member-delete p { margin: 0; color: var(--muted); font-size: 11px; }
 .member-delete label { color: var(--muted); font-size: 11px; font-weight: 700; }
 .member-delete input { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); }
+.member-empty { padding: 34px 0; color: var(--muted); text-align: center; }
 .permission-note { padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 13px; }
 .permission-note strong { display: block; margin-bottom: 4px; color: var(--text); }
 .admin-subnav { display: flex; justify-content: flex-end; margin: -18px 0 18px; }
@@ -357,6 +368,7 @@ button, input, select { font: inherit; }
   .site-header { padding: 0 20px; }
   .account-copy { display: none; }
   .member-heading { display: grid; }
+  .member-toolbar { align-items: stretch; }
   .audit-entry > header { display: grid; }
   .member-row { grid-template-columns: 1fr; padding: 14px 0; }
   .member-row > .member-controls { justify-content: stretch; }
@@ -386,6 +398,10 @@ button, input, select { font: inherit; }
   .main-nav { position: fixed; z-index: 30; left: 12px; right: 12px; bottom: 12px; justify-content: space-around; padding: 7px; border: 1px solid var(--line); border-radius: 13px; background: rgba(17,20,26,.96); box-shadow: 0 12px 40px #000; }
   .main-nav a { flex: 1; padding: 9px 4px; text-align: center; font-size: 12px; }
   .account-link { padding: 7px 10px; }
+  .member-toolbar { display: grid; }
+  .member-search { width: 100%; }
+  .member-count { justify-self: end; }
+  .member-records { grid-template-columns: 1fr; }
   .telegram-link { align-items: stretch; flex-direction: column; }
   .telegram-link .button { width: 100%; }
   .page-wrap { width: calc(100% - 28px); padding: 34px 0 100px; }

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidateTag } from "next/cache";
 import { createSupabaseAdminClient } from "../../lib/supabase/admin";
 import { createSupabaseServerClient } from "../../lib/supabase/server";
-import { clientAddress, takeRateLimit } from "../../lib/rate-limit";
+import { clearRateLimit, clientAddress, takeRateLimit } from "../../lib/rate-limit";
 import { siteUrl } from "../../lib/site-url";
 import { withToast } from "../../lib/toast";
 
@@ -12,14 +12,16 @@ export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const returnTo = String(formData.get("returnTo") ?? "/profile");
+  const address = await clientAddress();
   if (!email || !password) redirect(withToast("/login", "error", "이메일과 비밀번호를 입력해 주세요."));
-  if (!(await takeRateLimit("sign-in", await clientAddress(), 10, 300))) {
+  if (!(await takeRateLimit("sign-in", address, 30, 300))) {
     redirect(withToast("/login", "error", "로그인 시도가 너무 많습니다. 잠시 후 다시 시도해 주세요."));
   }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirect(withToast("/login", "error", "이메일 또는 비밀번호를 확인해 주세요."));
+  await clearRateLimit("sign-in", address);
   const destination = returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/profile";
   redirect(withToast(destination, "success", "로그인했습니다."));
 }
@@ -55,6 +57,7 @@ export async function updatePassword(formData: FormData) {
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) redirect(withToast("/reset-password", "error", "비밀번호를 변경하지 못했습니다. 새 비밀번호를 확인해 주세요."));
+  await clearRateLimit("sign-in", await clientAddress());
   await supabase.auth.signOut();
   redirect(withToast("/login", "success", "비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요."));
 }

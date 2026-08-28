@@ -13,6 +13,13 @@ export function isMemberUserId(value: string) {
   return userIdPattern.test(value);
 }
 
+export function matchesMemberSearch(member: { displayName: string; email: string | null; telegram: { username: string | null } | null }, query: string) {
+  const keyword = query.trim().normalize("NFKC").toLocaleLowerCase("ko-KR");
+  if (!keyword) return true;
+  const username = member.telegram?.username;
+  return [member.displayName, member.email, username, username ? `@${username}` : null].some((value) => value?.normalize("NFKC").toLocaleLowerCase("ko-KR").includes(keyword));
+}
+
 export function validateMemberAccountDeletion(input: {
   actorId: string;
   targetId: string;

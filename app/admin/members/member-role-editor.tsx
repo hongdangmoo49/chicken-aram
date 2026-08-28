@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { EditableRole, MemberRoleChange } from "../../../lib/member-roles";
+import { matchesMemberSearch, type EditableRole, type MemberRoleChange } from "../../../lib/member-roles";
 import type { AppRole } from "../../../lib/app-roles";
 import type { Member } from "../../roles";
 
@@ -18,7 +18,9 @@ export function MemberRoleEditor({ members, canManageRoles, currentUserId }: { m
   const [roles, setRoles] = useState<Record<string, EditableRole>>(() => baseline);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [query, setQuery] = useState("");
   const changes: MemberRoleChange[] = Object.entries(roles).filter(([userId, role]) => baseline[userId] !== role).map(([userId, role]) => ({ userId, role }));
+  const visibleMembers = useMemo(() => members.filter((member) => matchesMemberSearch(member, query)), [members, query]);
 
   async function saveChanges() {
     if (!changes.length) return;
@@ -35,14 +37,15 @@ export function MemberRoleEditor({ members, canManageRoles, currentUserId }: { m
 
   return <>
     {canManageRoles && <div className="member-save-bar"><span><strong>{changes.length}</strong>명 권한 변경 대기</span><div><button className="button ghost" disabled={!changes.length || saving} onClick={() => { setRoles(baseline); setMessage("변경사항을 초기화했습니다."); }} type="button">초기화</button><button className="button primary" disabled={!changes.length || saving} onClick={saveChanges} type="button">{saving ? "저장 중..." : "변경사항 저장"}</button></div></div>}
+    <div className="member-toolbar"><label className="member-search"><span>멤버 검색</span><input autoComplete="off" onChange={(event) => setQuery(event.target.value)} placeholder="닉네임, 이메일, @Telegram 사용자명" type="search" value={query} /></label><span className="member-count">{visibleMembers.length}/{members.length}명</span></div>
     <div className="member-list">
-      {members.map((member) => {
+      {visibleMembers.map((member) => {
         const canDelete = canManageRoles && member.id !== currentUserId && member.role !== "super_admin" && member.email;
         return <div className="member-row" key={member.id}>
-          <div><strong>{member.displayName}</strong>{member.email && <span>{member.email}</span>}<span>{roleLabels[member.role]}</span><span className={`telegram-status ${member.telegram ? "linked" : "unlinked"}`}>{member.telegram ? `텔레그램 연동됨${member.telegram.username ? ` · @${member.telegram.username}` : ""}` : "텔레그램 미연동"}</span>{member.record && <div className="member-records">
-            <span>라운드 <strong>{member.record.roundWins}승 {member.record.roundLosses}패 · 승률 {rate(member.record.roundWins, member.record.roundLosses)}%</strong></span>
-            <span>경기 <strong>{member.record.matchWins}승 {member.record.matchLosses}패 · 승률 {rate(member.record.matchWins, member.record.matchLosses)}%</strong></span>
-            <span>최근 5경기 <strong>{member.record.recentMatches}</strong></span>
+          <div className="member-identity"><div className="member-name-line"><strong>{member.displayName}</strong><span className={`telegram-status ${member.telegram ? "linked" : "unlinked"}`}>{member.telegram ? `텔레그램 연동됨${member.telegram.username ? ` · @${member.telegram.username}` : ""}` : "텔레그램 미연동"}</span></div>{member.email && <span className="member-email">{member.email}</span>}{member.record && <div className="member-records">
+            <span><small>라운드</small><strong>{member.record.roundWins}승 {member.record.roundLosses}패 · 승률 {rate(member.record.roundWins, member.record.roundLosses)}%</strong></span>
+            <span><small>경기</small><strong>{member.record.matchWins}승 {member.record.matchLosses}패 · 승률 {rate(member.record.matchWins, member.record.matchLosses)}%</strong></span>
+            <span><small>최근 5경기</small><strong>{member.record.recentMatches}</strong></span>
           </div>}</div>
           <div className="member-controls">
             {canManageRoles && member.role !== "super_admin" ? <select aria-label={`${member.displayName} 권한`} disabled={saving} onChange={(event) => setRoles((current) => ({ ...current, [member.id]: event.target.value as EditableRole }))} value={roles[member.id]}><option value="user">일반 사용자</option><option value="admin">관리자</option></select> : <span className="role-badge">{roleLabels[member.role]}</span>}
@@ -58,6 +61,7 @@ export function MemberRoleEditor({ members, canManageRoles, currentUserId }: { m
           </div>
         </div>;
       })}
+      {!visibleMembers.length && <p className="member-empty">검색 조건에 맞는 멤버가 없습니다.</p>}
     </div>
     <p className="sr-status" aria-live="polite" role="status">{message}</p>
   </>;

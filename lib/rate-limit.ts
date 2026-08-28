@@ -24,3 +24,10 @@ export async function takeRateLimit(scope: string, subject: string, limit: numbe
   }
   return data === true;
 }
+
+export async function clearRateLimit(scope: string, subject: string) {
+  const key = createHash("sha256").update(`${scope}:${subject}`).digest("hex");
+  const { error } = await createSupabaseAdminClient().from("request_rate_limits").delete().eq("key", key);
+  if (error) reportError("rate-limit.clear", error, { scope });
+  return !error;
+}

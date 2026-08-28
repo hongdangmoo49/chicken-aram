@@ -125,6 +125,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(memberRoleEditor, /라운드.*roundWins.*roundLosses.*승률/);
   assert.match(memberRoleEditor, /경기.*matchWins.*matchLosses.*승률/);
   assert.match(memberRoleEditor, /최근 5경기.*recentMatches/);
+  assert.match(memberRoleEditor, /멤버 검색/);
+  assert.match(memberRoleEditor, /matchesMemberSearch/);
   assert.match(memberRoleEditor, /텔레그램 연동됨/);
   assert.match(memberRoleEditor, /텔레그램 미연동/);
   assert.match(ui, /AccountMenu/);

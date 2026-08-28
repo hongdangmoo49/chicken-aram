@@ -19,6 +19,10 @@ test("rate limits authentication and every custom write endpoint", async () => {
     "app/api/mvp-votes/[matchId]/route.ts",
   ];
   for (const file of files) assert.match(await readFile(new URL(file, root), "utf8"), /takeRateLimit/);
+  const authActions = await readFile(new URL("app/auth/actions.ts", root), "utf8");
+  assert.match(authActions, /takeRateLimit\("sign-in", address, 30, 300\)/);
+  assert.match(authActions, /updateUser\(\{ password \}\).*clearRateLimit\("sign-in"/s);
+  assert.match(authActions, /signInWithPassword.*clearRateLimit\("sign-in", address\)/s);
   const migration = await readFile(new URL("supabase/migrations/202607230018_add_request_rate_limits.sql", root), "utf8");
   assert.match(migration, /on conflict \(key, window_started_at\)/);
   assert.match(migration, /grant execute .* to service_role/);
