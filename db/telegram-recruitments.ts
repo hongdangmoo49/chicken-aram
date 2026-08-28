@@ -118,6 +118,13 @@ export async function listRecruitments(chatId: number, scheduledDate: string) {
   return Promise.all(((data ?? []) as RecruitmentRow[]).map(async (row) => ({ row, view: await recruitmentView(row) })));
 }
 
+export async function removeRecruitment(chatId: number, scheduledDate: string, recruitmentId: number) {
+  await expireRecruitments(chatId);
+  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitments").update({ status: "expired" }).eq("id", recruitmentId).eq("chat_id", chatId).eq("scheduled_date", scheduledDate).is("match_id", null).in("status", ["open", "full"]).select(recruitmentFields).maybeSingle();
+  if (error) fail("Telegram 모집 삭제 실패", error);
+  return data as RecruitmentRow | null;
+}
+
 export async function createScheduleFromRecruitment(input: { chatId: number; scheduledDate: string; recruitmentId: number; actorTelegramUserId: number }) {
   const recruitment = await getRecruitmentById(input.chatId, input.scheduledDate, input.recruitmentId);
   if (!recruitment) return { status: "not_found" as const };

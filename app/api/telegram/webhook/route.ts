@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, createScheduleFromRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
+import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, createScheduleFromRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, removeRecruitment, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
 import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
@@ -35,8 +35,13 @@ function detailKeyboard(recruitment: RecruitmentView): TelegramInlineKeyboard {
   if (recruitment.matchId) rows.push([{ text: "🏟 대전 예정에서 확인", url: `${siteUrl}/schedule#match-${recruitment.matchId}` }]);
   else if (recruitment.status === "full") rows.push([{ text: "🏟 대전 예정 생성", callback_data: `recruit:schedule:${recruitment.id}` }], [{ text: "❌ 참여 취소", callback_data: `recruit:cancel:${recruitment.id}` }]);
   else rows.push([{ text: "✅ 참여하기", callback_data: `recruit:vote:${recruitment.id}` }, { text: "❌ 참여 취소", callback_data: `recruit:cancel:${recruitment.id}` }]);
+  if (!recruitment.matchId) rows.push([{ text: "🗑 모집 삭제", callback_data: `recruit:delete:${recruitment.id}` }]);
   rows.push([{ text: "⬅️ 오늘 모집 목록", callback_data: "recruit:list" }]);
   return { inline_keyboard: rows };
+}
+
+function deleteConfirmationKeyboard(recruitmentId: number): TelegramInlineKeyboard {
+  return { inline_keyboard: [[{ text: "⚠️ 모집 삭제 확인", callback_data: `recruit:delete-confirm:${recruitmentId}` }], [{ text: "취소", callback_data: `recruit:view:${recruitmentId}` }]] };
 }
 
 function createdScheduleText(result: Extract<Awaited<ReturnType<typeof createScheduleFromRecruitment>>, { status: "created" }>) {
@@ -109,7 +114,7 @@ async function handleCallback(query: TelegramCallbackQuery) {
     return void await answerTelegramCallback(query.id);
   }
 
-  const match = /^recruit:(view|vote|cancel|schedule):(\d+)$/.exec(query.data);
+  const match = /^recruit:(view|vote|cancel|schedule|delete|delete-confirm):(\d+)$/.exec(query.data);
   if (!match) return void await answerTelegramCallback(query.id, "잘못된 모집 버튼입니다.");
   const action = match[1];
   const recruitmentId = Number(match[2]);
@@ -118,6 +123,23 @@ async function handleCallback(query: TelegramCallbackQuery) {
     if (!recruitment) return void await answerTelegramCallback(query.id, "오늘 진행 중인 모집이 아닙니다.");
     await editTelegramMessage(chatId, message.message_id, formatRecruitment(recruitment.view), detailKeyboard(recruitment.view));
     return void await answerTelegramCallback(query.id);
+  }
+
+  if (action === "delete" || action === "delete-confirm") {
+    if (!(await isTelegramChatAdmin(chatId, query.from.id))) return void await answerTelegramCallback(query.id, "Telegram 그룹 관리자만 삭제할 수 있습니다.");
+    const recruitment = await getRecruitmentById(chatId, scheduledDate, recruitmentId);
+    if (!recruitment) return void await answerTelegramCallback(query.id, "오늘 모집을 찾을 수 없습니다.");
+    if (recruitment.view.matchId) return void await answerTelegramCallback(query.id, "대전 예정이 생성된 모집은 삭제할 수 없습니다.");
+    if (action === "delete") {
+      await editTelegramMessage(chatId, message.message_id, `${formatRecruitment(recruitment.view)}\n\n⚠️ 이 모집을 삭제하시겠습니까?`, deleteConfirmationKeyboard(recruitmentId));
+      return void await answerTelegramCallback(query.id);
+    }
+    const removed = await removeRecruitment(chatId, scheduledDate, recruitmentId);
+    if (!removed) return void await answerTelegramCallback(query.id, "모집을 삭제하지 못했습니다.");
+    const deletedText = `🗑 ${removed.scheduled_date} ${removed.hour}시 치증 모집이 삭제되었습니다.`;
+    if (removed.message_id) await editTelegramMessage(chatId, Number(removed.message_id), deletedText, { inline_keyboard: [] });
+    if (Number(removed.message_id) !== message.message_id) await editTelegramMessage(chatId, message.message_id, deletedText, { inline_keyboard: [[{ text: "⬅️ 오늘 모집 목록", callback_data: "recruit:list" }]] });
+    return void await answerTelegramCallback(query.id, "모집을 삭제했습니다.");
   }
 
   if (action === "schedule") {

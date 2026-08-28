@@ -63,7 +63,10 @@ test("secures and persists webhook updates", async () => {
   assert.match(route, /consumeTelegramLink/);
   assert.match(route, /recruit:schedule:/);
   assert.match(route, /createScheduleFromRecruitment/);
+  assert.match(route, /recruit:delete-confirm:/);
+  assert.match(route, /removeRecruitment/);
   assert.match(database, /\.eq\("scheduled_date", scheduledDate\)/);
+  assert.match(database, /update\(\{ status: "expired" \}\).*\.is\("match_id", null\)/);
   assert.match(database, /create_telegram_schedule/);
   assert.doesNotMatch(route, /sendPoll|poll_answer/);
   assert.match(migration, /telegram_recruitments_one_time_per_chat/);
