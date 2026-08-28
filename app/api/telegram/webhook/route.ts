@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
-import { claimTelegramUpdate, createRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
+import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
-import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
+import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
 
 type TelegramMessage = {
@@ -42,6 +42,14 @@ async function handleMessage(message: TelegramMessage) {
   if (!command) return;
   const chatId = message.chat.id;
   const userId = message.from.id;
+  const linkToken = command.name === "start" ? parseTelegramLinkToken(command.argument) : null;
+  if (linkToken) {
+    if (message.chat.type !== "private") return void await sendTelegramMessage(chatId, "계정 연동 링크는 치증봇 개인 채팅에서 열어 주세요.");
+    const linked = await consumeTelegramLink(linkToken, userId, message.from.username ?? null);
+    if (linked.status === "invalid") return void await sendTelegramMessage(chatId, "연동 링크가 만료되었거나 올바르지 않습니다. 치증 사이트에서 다시 시도해 주세요.");
+    if (linked.status === "already_linked") return void await sendTelegramMessage(chatId, "이 텔레그램 계정은 이미 다른 치증 계정과 연동되어 있습니다.");
+    return void await sendTelegramMessage(chatId, `✅ ${linked.displayName} 치증 계정과 연동했습니다. 이제 텔레그램 투표가 해당 계정에 귀속됩니다.`);
+  }
   if (message.chat.type !== "group" && message.chat.type !== "supergroup") return void await sendTelegramMessage(chatId, "치증봇은 텔레그램 그룹에서 사용해 주세요.");
 
   if (command.name === "help" || command.name === "start") return void await sendTelegramMessage(chatId, helpMessage());

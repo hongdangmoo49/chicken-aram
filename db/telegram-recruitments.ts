@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash, randomBytes } from "node:crypto";
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import type { RecruitmentView, RecruitmentVoteView } from "../lib/telegram-commands";
 
@@ -16,18 +17,28 @@ function fail(operation: string, error: { message: string } | null): never {
   throw new Error(`${operation}: ${error?.message ?? "unknown Supabase error"}`);
 }
 
+function telegramTokenHash(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 export async function getTelegramConnection(profileId: string) {
   const { data, error } = await createSupabaseAdminClient().from("profiles").select("telegram_user_id,telegram_username").eq("id", profileId).maybeSingle();
   if (error) fail("Telegram 계정 연동 조회 실패", error);
   return data?.telegram_user_id ? { userId: Number(data.telegram_user_id), username: data.telegram_username as string | null } : null;
 }
 
-export async function linkTelegramAccount(profileId: string, telegramUserId: number, telegramUsername: string | null) {
-  const { data, error } = await createSupabaseAdminClient().from("profiles").update({ telegram_user_id: telegramUserId, telegram_username: telegramUsername }).eq("id", profileId).select("id").maybeSingle();
-  if ((error as { code?: string } | null)?.code === "23505") return false;
+export async function createTelegramLink(profileId: string) {
+  const token = randomBytes(24).toString("base64url");
+  const now = new Date();
+  const { error } = await createSupabaseAdminClient().from("telegram_link_tokens").upsert({ token_hash: telegramTokenHash(token), profile_id: profileId, expires_at: new Date(now.getTime() + 10 * 60_000).toISOString(), created_at: now.toISOString() }, { onConflict: "profile_id" });
+  if (error) fail("Telegram 계정 연동 링크 생성 실패", error);
+  return token;
+}
+
+export async function consumeTelegramLink(token: string, telegramUserId: number, telegramUsername: string | null) {
+  const { data, error } = await createSupabaseAdminClient().rpc("consume_telegram_link", { p_token_hash: telegramTokenHash(token), p_telegram_user_id: telegramUserId, p_telegram_username: telegramUsername ?? "" });
   if (error) fail("Telegram 계정 연동 실패", error);
-  if (!data) throw new Error("Telegram 계정을 연결할 프로필이 없습니다.");
-  return true;
+  return data as { status: "ok" | "invalid" | "already_linked"; displayName?: string };
 }
 
 export async function claimTelegramUpdate(updateId: number) {

@@ -1,11 +1,9 @@
 import { getPlayerProfile } from "../../db/site-data";
 import { getTelegramConnection } from "../../db/telegram-recruitments";
 import { playerTierLabel } from "../../lib/player-tiers";
-import { createTelegramLoginState } from "../../lib/telegram-login";
 import { requireCurrentUser } from "../auth";
 import { PageShell, PlayerAvatar, PlayerPositions } from "../ui";
 import { PositionPicker } from "./position-picker";
-import { TelegramLoginButton } from "./telegram-login-button";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "내 프로필" };
@@ -13,7 +11,6 @@ export const metadata = { title: "내 프로필" };
 export default async function ProfilePage() {
   const user = await requireCurrentUser("/profile");
   const [profile, telegram] = await Promise.all([getPlayerProfile(user.id), getTelegramConnection(user.id)]);
-  const telegramState = createTelegramLoginState(user.id, process.env.TELEGRAM_BOT_TOKEN ?? "");
   const roundRate = profile && profile.roundWins + profile.roundLosses ? Math.round(profile.roundWins / (profile.roundWins + profile.roundLosses) * 100) : 0;
   return <PageShell active="profile">
     <header className="page-intro"><div><span className="eyebrow">PLAYER PROFILE</span><h1>내 프로필</h1></div><p>가입할 때 입력한 닉네임과 선수 썸네일을 직접 수정할 수 있습니다.</p></header>
@@ -25,7 +22,7 @@ export default async function ProfilePage() {
           <button className="button primary" type="submit">닉네임 저장</button>
         </form>
         <PositionPicker initialPositions={profile.positions} />
-        <div className="telegram-link"><div><strong>텔레그램 연동</strong><p>{telegram ? `${telegram.username ? `@${telegram.username}` : "텔레그램 계정"}과 연동되었습니다. 다른 계정으로 다시 연동할 수도 있습니다.` : "팝업에서 Telegram 로그인을 승인하면 치증봇 투표가 현재 계정에 연결됩니다."}</p></div><TelegramLoginButton state={telegramState} /></div>
+        <div className="telegram-link"><div><strong>텔레그램 앱 간편 연동</strong><p>{telegram ? `${telegram.username ? `@${telegram.username}` : "텔레그램 계정"}과 연동되었습니다. 다른 계정으로 다시 연동할 수도 있습니다.` : "Telegram 앱에서 치증봇을 열어 현재 계정에 투표를 연결합니다."}</p></div><form action="/api/profile/telegram-link" method="post"><button className="button" type="submit">{telegram ? "Telegram 앱으로 다시 연동" : "Telegram 앱으로 연동"}</button></form></div>
         <form action="/api/profile/thumbnail" className="thumbnail-form" encType="multipart/form-data" method="post">
           <div className="field"><label htmlFor="thumbnail">새 썸네일</label><input id="thumbnail" name="thumbnail" type="file" accept="image/jpeg,image/png,image/webp" required /></div>
           <p>JPG, PNG, WebP · 최대 3MB · 512×512 WebP로 안전하게 변환됩니다.</p>

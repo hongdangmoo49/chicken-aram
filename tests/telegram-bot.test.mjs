@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { formatRecruitment, formatRecruitmentList, parseTelegramCommand, parseVoteHour } from "../lib/telegram-commands.ts";
+import { formatRecruitment, formatRecruitmentList, parseTelegramCommand, parseTelegramLinkToken, parseVoteHour } from "../lib/telegram-commands.ts";
 
 test("parses custom recruitment commands without native Telegram polls", () => {
   assert.deepEqual(parseTelegramCommand("/create@chijeung_bot"), { name: "create", argument: "" });
@@ -14,6 +14,9 @@ test("parses custom recruitment commands without native Telegram polls", () => {
   assert.equal(parseVoteHour("0"), null);
   assert.equal(parseVoteHour("24"), 24);
   assert.equal(parseVoteHour("25"), null);
+  const token = "A".repeat(32);
+  assert.equal(parseTelegramLinkToken(`link_${token}`), token);
+  assert.equal(parseTelegramLinkToken("link_short"), null);
 });
 
 test("lists participants for a created start time", () => {
@@ -35,13 +38,12 @@ test("lists today's recruitments including full games", () => {
 });
 
 test("secures and persists webhook updates", async () => {
-  const [route, database, migration, linkMigration, profile, widget, linkRoute, setup] = await Promise.all([
+  const [route, database, migration, linkMigration, profile, linkRoute, setup] = await Promise.all([
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/telegram-recruitments.ts", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608280027_add_telegram_recruitments.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608280028_link_telegram_accounts.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/profile/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/profile/telegram-login-button.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/profile/telegram-link/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../scripts/setup-telegram-bot.mjs", import.meta.url), "utf8"),
   ]);
@@ -53,6 +55,7 @@ test("secures and persists webhook updates", async () => {
   assert.match(route, /recruit:view:/);
   assert.match(route, /saveRecruitmentVoteById/);
   assert.match(route, /모집 완료/);
+  assert.match(route, /consumeTelegramLink/);
   assert.match(database, /\.eq\("scheduled_date", scheduledDate\)/);
   assert.doesNotMatch(route, /sendPoll|poll_answer/);
   assert.match(migration, /telegram_recruitments_one_time_per_chat/);
@@ -64,13 +67,10 @@ test("secures and persists webhook updates", async () => {
   assert.match(linkMigration, /telegram_link_tokens/);
   assert.match(linkMigration, /consume_telegram_link/);
   assert.match(linkMigration, /grant execute .* to service_role/);
-  assert.match(profile, /TelegramLoginButton/);
-  assert.match(widget, /data-auth-url/);
-  assert.doesNotMatch(widget, /data-onauth/);
-  assert.match(linkRoute, /export async function GET/);
-  assert.match(linkRoute, /verifyTelegramLoginState/);
-  assert.match(linkRoute, /verifyTelegramLogin/);
-  assert.match(linkRoute, /linkTelegramAccount/);
+  assert.match(profile, /Telegram 앱으로 연동/);
+  assert.match(linkRoute, /export async function POST/);
+  assert.match(linkRoute, /https:\/\/t\.me\/chicken_aram_bot\?start=link_/);
+  assert.match(linkRoute, /createTelegramLink/);
   assert.match(linkRoute, /takeRateLimit/);
   assert.match(setup, /allowed_updates: \["message", "callback_query"\]/);
 });

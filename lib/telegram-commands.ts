@@ -10,6 +10,10 @@ export function parseTelegramCommand(text: string): TelegramCommand | null {
   return { name, argument: arguments_.join(" ") } as TelegramCommand;
 }
 
+export function parseTelegramLinkToken(value: string) {
+  return /^link_([A-Za-z0-9_-]{32})$/.exec(value)?.[1] ?? null;
+}
+
 export function parseVoteHour(value: string) {
   if (!/^\d{1,2}$/.test(value)) return null;
   const hour = Number(value);
