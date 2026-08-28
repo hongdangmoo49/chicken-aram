@@ -6,7 +6,7 @@ import { getCurrentUser } from "../../../auth";
 export async function POST() {
   const user = await getCurrentUser();
   if (!user) return Response.json({ error: "로그인이 필요합니다." }, { status: 401 });
-  if (!(await takeRateLimit("telegram-link", user.id, 5, 600))) return Response.json({ error: "연동 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, { status: 429 });
+  if (!(await takeRateLimit("telegram-link-v2", user.id, 20, 600))) return Response.json({ error: "연동 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, { status: 429 });
   try {
     const token = await createTelegramLink(user.id);
     return Response.json({ url: `https://t.me/chicken_aram_bot?start=link_${token}` });
