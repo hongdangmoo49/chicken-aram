@@ -125,6 +125,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(memberRoleEditor, /라운드.*roundWins.*roundLosses.*승률/);
   assert.match(memberRoleEditor, /경기.*matchWins.*matchLosses.*승률/);
   assert.match(memberRoleEditor, /최근 5경기.*recentMatches/);
+  assert.match(memberRoleEditor, /텔레그램 연동됨/);
+  assert.match(memberRoleEditor, /텔레그램 미연동/);
   assert.match(ui, /AccountMenu/);
   assert.match(auth, /cache\(async/);
   assert.match(auth, /getClaims\(\)/);
@@ -142,6 +144,7 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(siteData, /createSupabasePublicClient/);
   assert.doesNotMatch(roles, /getRole|isAdmin|isSuperAdmin/);
   assert.match(roles, /players\(wins,losses\)/);
+  assert.match(roles, /telegram_user_id,telegram_username/);
   assert.match(roles, /calculateRoundRecord/);
   assert.match(roles, /formatRecentMatchRecord/);
   assert.match(nicknameRoute, /이미 사용 중인 닉네임/);

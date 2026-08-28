@@ -10,6 +10,7 @@ export type Member = {
   displayName: string;
   email: string | null;
   role: AppRole;
+  telegram: { username: string | null } | null;
   record: {
     roundWins: number;
     roundLosses: number;
@@ -33,7 +34,7 @@ export async function getMembers(includeEmails = false): Promise<Member[]> {
   const admin = createSupabaseAdminClient();
   // ponytail: 개인 리그의 라운드 참가 기록은 1,000건 미만. 넘으면 DB 집계 RPC로 바꾼다.
   const [{ data, error }, { data: roundResults, error: roundError }] = await Promise.all([
-    admin.from("profiles").select("id,display_name,role,player_id,players(wins,losses)").order("created_at"),
+    admin.from("profiles").select("id,display_name,role,player_id,telegram_user_id,telegram_username,players(wins,losses)").order("created_at"),
     admin.from("match_players").select("player_id,team,matches!inner(a_score,b_score,status,winner,played_at)").eq("matches.status", "completed"),
   ]);
   if (error || roundError) throw new Error(`멤버 목록 조회 실패: ${error?.message ?? roundError?.message}`);
@@ -76,6 +77,7 @@ export async function getMembers(includeEmails = false): Promise<Member[]> {
       displayName: member.display_name || "이름 없음",
       email: emailById.get(member.id) ?? null,
       role: member.role as AppRole,
+      telegram: member.telegram_user_id ? { username: member.telegram_username as string | null } : null,
       record: player && playerId !== null ? {
         ...calculateRoundRecord(roundsByPlayerId.get(playerId) ?? []),
         matchWins: Number(player.wins),

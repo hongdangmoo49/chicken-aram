@@ -39,7 +39,7 @@ export function MemberRoleEditor({ members, canManageRoles, currentUserId }: { m
       {members.map((member) => {
         const canDelete = canManageRoles && member.id !== currentUserId && member.role !== "super_admin" && member.email;
         return <div className="member-row" key={member.id}>
-          <div><strong>{member.displayName}</strong>{member.email && <span>{member.email}</span>}<span>{roleLabels[member.role]}</span>{member.record && <div className="member-records">
+          <div><strong>{member.displayName}</strong>{member.email && <span>{member.email}</span>}<span>{roleLabels[member.role]}</span><span className={`telegram-status ${member.telegram ? "linked" : "unlinked"}`}>{member.telegram ? `텔레그램 연동됨${member.telegram.username ? ` · @${member.telegram.username}` : ""}` : "텔레그램 미연동"}</span>{member.record && <div className="member-records">
             <span>라운드 <strong>{member.record.roundWins}승 {member.record.roundLosses}패 · 승률 {rate(member.record.roundWins, member.record.roundLosses)}%</strong></span>
             <span>경기 <strong>{member.record.matchWins}승 {member.record.matchLosses}패 · 승률 {rate(member.record.matchWins, member.record.matchLosses)}%</strong></span>
             <span>최근 5경기 <strong>{member.record.recentMatches}</strong></span>

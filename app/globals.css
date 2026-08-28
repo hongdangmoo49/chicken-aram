@@ -270,6 +270,9 @@ button, input, select { font: inherit; }
 .member-row:last-child { border-bottom: 0; }
 .member-row > div { display: grid; gap: 4px; }
 .member-row > div span { color: var(--muted); font-size: 11px; }
+.member-row .telegram-status { width: fit-content; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-weight: 800; }
+.member-row .telegram-status.linked { border-color: #2f6849; color: #8ee3b3; }
+.member-row .telegram-status.unlinked { color: var(--muted); }
 .member-records { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 3px; }
 .member-records strong { color: var(--text); }
 .member-row > .member-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: start; gap: 8px; }
