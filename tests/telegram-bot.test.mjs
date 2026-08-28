@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { formatRecruitment, formatRecruitmentList, parseTelegramCommand, parseTelegramLinkToken, parseVoteHour, votingRecruitments } from "../lib/telegram-commands.ts";
+import { formatRecruitment, formatRecruitmentList, parseTelegramCommand, parseVoteHour, votingRecruitments } from "../lib/telegram-commands.ts";
 
 test("parses custom recruitment commands without native Telegram polls", () => {
   assert.deepEqual(parseTelegramCommand("/create@chijeung_bot"), { name: "create", argument: "" });
@@ -14,13 +14,6 @@ test("parses custom recruitment commands without native Telegram polls", () => {
   assert.equal(parseVoteHour("0"), null);
   assert.equal(parseVoteHour("24"), 24);
   assert.equal(parseVoteHour("25"), null);
-});
-
-test("accepts only generated Telegram account link tokens", () => {
-  const token = "A".repeat(32);
-  assert.equal(parseTelegramLinkToken(`link_${token}`), token);
-  assert.equal(parseTelegramLinkToken("link_short"), null);
-  assert.equal(parseTelegramLinkToken(`${token}`), null);
 });
 
 test("lists participants for a created start time", () => {
@@ -60,7 +53,6 @@ test("secures and persists webhook updates", async () => {
   assert.match(route, /callback_query/);
   assert.match(route, /recruit:view:/);
   assert.match(route, /saveRecruitmentVoteById/);
-  assert.match(route, /consumeTelegramLink/);
   assert.match(database, /\.eq\("scheduled_date", scheduledDate\)/);
   assert.doesNotMatch(route, /sendPoll|poll_answer/);
   assert.match(migration, /telegram_recruitments_one_time_per_chat/);
@@ -72,8 +64,9 @@ test("secures and persists webhook updates", async () => {
   assert.match(linkMigration, /telegram_link_tokens/);
   assert.match(linkMigration, /consume_telegram_link/);
   assert.match(linkMigration, /grant execute .* to service_role/);
-  assert.match(profile, /텔레그램 연동하기/);
-  assert.match(linkRoute, /https:\/\/t\.me\/\$\{botUsername\}\?start=link_/);
+  assert.match(profile, /TelegramLoginButton/);
+  assert.match(linkRoute, /verifyTelegramLogin/);
+  assert.match(linkRoute, /linkTelegramAccount/);
   assert.match(linkRoute, /takeRateLimit/);
   assert.match(setup, /allowed_updates: \["message", "callback_query"\]/);
 });

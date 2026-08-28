@@ -4,6 +4,7 @@ import { playerTierLabel } from "../../lib/player-tiers";
 import { requireCurrentUser } from "../auth";
 import { PageShell, PlayerAvatar, PlayerPositions } from "../ui";
 import { PositionPicker } from "./position-picker";
+import { TelegramLoginButton } from "./telegram-login-button";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "내 프로필" };
@@ -22,7 +23,7 @@ export default async function ProfilePage() {
           <button className="button primary" type="submit">닉네임 저장</button>
         </form>
         <PositionPicker initialPositions={profile.positions} />
-        <div className="telegram-link"><div><strong>텔레그램 연동</strong><p>{telegram ? `${telegram.username ? `@${telegram.username}` : "텔레그램 계정"}과 연동되었습니다. 이 계정의 투표가 치증 계정에 귀속됩니다.` : "치증봇에서 참여한 투표를 현재 계정에 연결합니다."}</p></div><form action="/api/profile/telegram-link" method="post"><button className="button" type="submit">{telegram ? "텔레그램 다시 연동" : "텔레그램 연동하기"}</button></form></div>
+        <div className="telegram-link"><div><strong>텔레그램 연동</strong><p>{telegram ? `${telegram.username ? `@${telegram.username}` : "텔레그램 계정"}과 연동되었습니다. 다른 계정으로 다시 연동할 수도 있습니다.` : "팝업에서 Telegram 로그인을 승인하면 치증봇 투표가 현재 계정에 연결됩니다."}</p></div><TelegramLoginButton /></div>
         <form action="/api/profile/thumbnail" className="thumbnail-form" encType="multipart/form-data" method="post">
           <div className="field"><label htmlFor="thumbnail">새 썸네일</label><input id="thumbnail" name="thumbnail" type="file" accept="image/jpeg,image/png,image/webp" required /></div>
           <p>JPG, PNG, WebP · 최대 3MB · 512×512 WebP로 안전하게 변환됩니다.</p>

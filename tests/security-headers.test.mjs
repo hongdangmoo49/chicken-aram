@@ -13,6 +13,9 @@ test("uses a fixed canonical origin and secure response headers", async () => {
   for (const header of ["Content-Security-Policy", "Strict-Transport-Security", "X-Content-Type-Options", "Referrer-Policy", "Permissions-Policy"]) {
     assert.match(config, new RegExp(header));
   }
+  assert.match(config, /script-src .*https:\/\/telegram\.org/);
+  assert.match(config, /frame-src https:\/\/oauth\.telegram\.org/);
+  assert.match(config, /same-origin-allow-popups/);
   assert.doesNotMatch(layout, /x-forwarded-host|headers\(\)/);
   assert.match(layout, /metadataBase: new URL\(siteUrl\)/);
   assert.match(redirects, /new URL\(withToast\(path, type, message\), siteUrl\)/);

@@ -31,12 +31,6 @@ export async function answerTelegramCallback(callbackQueryId: string, text?: str
   return callTelegram("answerCallbackQuery", { callback_query_id: callbackQueryId, ...(text ? { text } : {}) });
 }
 
-export async function getTelegramBotUsername() {
-  const bot = await callTelegram<{ username?: string }>("getMe", {});
-  if (!bot?.username) throw new Error("Telegram bot username was not returned.");
-  return bot.username;
-}
-
 export async function isTelegramChatAdmin(chatId: number, userId: number) {
   const member = await callTelegram<{ status: string }>("getChatMember", { chat_id: chatId, user_id: userId });
   return member?.status === "creator" || member?.status === "administrator";
