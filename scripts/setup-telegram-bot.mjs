@@ -16,6 +16,7 @@ await telegram("setMyCommands", { commands: [
   { command: "create", description: "오늘 시간별 모집 만들기: /create 9" },
   { command: "vote", description: "시간별 모집 참여: /vote 9" },
   { command: "cancle", description: "시간별 참여 취소: /cancle 9" },
+  { command: "result", description: "경기 결과 등록: /result 9 3 1" },
   { command: "list", description: "현재 모집과 참여자 보기" },
   { command: "help", description: "치증봇 사용법" },
 ] });

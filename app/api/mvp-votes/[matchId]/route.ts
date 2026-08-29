@@ -1,4 +1,5 @@
 import { castMvpVote } from "../../../../db/site-data";
+import { syncTelegramMvpMessage } from "../../../../db/telegram-mvp";
 import { reportError } from "../../../../lib/observability";
 import { takeRateLimit } from "../../../../lib/rate-limit";
 import { getCurrentUser } from "../../../auth";
@@ -13,6 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ mat
   if (!Number.isInteger(matchId) || matchId < 1 || !Number.isInteger(candidatePlayerId) || candidatePlayerId < 1) return Response.json({ error: "MVP 후보를 확인해 주세요." }, { status: 400 });
   try {
     await castMvpVote({ matchId, candidatePlayerId, actorId: user.id });
+    try { await syncTelegramMvpMessage(matchId); } catch (error) { reportError("telegram.mvp.sync", error, { matchId }); }
     return Response.json({ ok: true });
   } catch (error) {
     const errorId = reportError("mvp-vote.cast", error, { matchId, candidatePlayerId });

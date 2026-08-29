@@ -1,7 +1,8 @@
 import { timingSafeEqual } from "node:crypto";
 import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, createScheduleFromRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, removeRecruitment, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
+import { castTelegramMvpVote, saveTelegramMatchResult, syncTelegramMvpMessage } from "../../../../db/telegram-mvp";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
-import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
+import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
 import { siteUrl } from "../../../../lib/site-url";
 
@@ -84,6 +85,18 @@ async function handleMessage(message: TelegramMessage) {
     return;
   }
 
+  if (command.name === "result") {
+    if (!(await isTelegramChatAdmin(chatId, userId))) return void await sendTelegramMessage(chatId, "Telegram 그룹 관리자만 경기 결과를 등록할 수 있습니다.");
+    const resultInput = parseTelegramResult(command.argument);
+    if (!resultInput) return void await sendTelegramMessage(chatId, "사용법: /result 21 3 1 (A팀 3점, B팀 1점)");
+    const result = await saveTelegramMatchResult({ chatId, scheduledDate: todayInKorea(), telegramUserId: userId, ...resultInput });
+    if (result.status === "not_found") return void await sendTelegramMessage(chatId, `오늘 ${resultInput.hour}시에 Telegram에서 생성한 대전을 찾을 수 없습니다.`);
+    if (result.status === "not_authorized") return void await sendTelegramMessage(chatId, "사이트 관리자 계정과 Telegram을 연동해 주세요.");
+    await syncTelegramMvpMessage(result.matchId);
+    if (result.status === "already_completed") return void await sendTelegramMessage(chatId, "이미 결과가 등록된 경기입니다. MVP 투표 메시지를 갱신했습니다.");
+    return void await sendTelegramMessage(chatId, [`✅ 경기 결과 등록 완료`, "", `A팀 ${result.aScore} : ${result.bScore} B팀`, `승리팀: ${result.winner}팀`, "", `A팀 · ${result.teamA.join(" · ")}`, `B팀 · ${result.teamB.join(" · ")}`, "", "MVP 투표를 시작했습니다."].join("\n"));
+  }
+
   if (command.name === "vote" || command.name === "cancle") {
     const hour = parseVoteHour(command.argument);
     if (hour === null) return void await sendTelegramMessage(chatId, `사용법: /${command.name} 9`);
@@ -108,6 +121,17 @@ async function handleCallback(query: TelegramCallbackQuery) {
   if (!message || !query.data || (message.chat.type !== "group" && message.chat.type !== "supergroup")) return void await answerTelegramCallback(query.id, "사용할 수 없는 버튼입니다.");
   const chatId = message.chat.id;
   const scheduledDate = todayInKorea();
+  const mvpMatch = /^mvp:(\d+):(\d+)$/.exec(query.data);
+  if (mvpMatch) {
+    const matchId = Number(mvpMatch[1]);
+    const candidatePlayerId = Number(mvpMatch[2]);
+    const result = await castTelegramMvpVote({ matchId, candidatePlayerId, telegramUserId: query.from.id, chatId });
+    if (result.status === "unlinked") return void await answerTelegramCallback(query.id, "치증 사이트에서 Telegram 계정을 연동해 주세요.");
+    if (result.status === "rejected") return void await answerTelegramCallback(query.id, "본인이 참가한 경기의 상대팀 선수에게만 투표할 수 있습니다.");
+    await answerTelegramCallback(query.id, "MVP 투표를 저장했습니다.");
+    await syncTelegramMvpMessage(matchId);
+    return;
+  }
   if (query.data === "recruit:list") {
     const views = (await listRecruitments(chatId, scheduledDate)).map(({ view }) => view);
     await editTelegramMessage(chatId, message.message_id, formatRecruitmentList(views), listKeyboard(views));

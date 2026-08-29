@@ -1,4 +1,4 @@
-export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "help" | "start"; argument: string };
+export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "result" | "help" | "start"; argument: string };
 export type RecruitmentVoteView = { telegramUserId: number; displayName: string; username: string | null };
 export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full"; targetCount: number; matchId: number | null; votes: RecruitmentVoteView[] };
 
@@ -6,7 +6,7 @@ export function parseTelegramCommand(text: string): TelegramCommand | null {
   const [raw = "", ...arguments_] = text.trim().split(/\s+/);
   if (!raw.startsWith("/")) return null;
   const name = raw.slice(1).split("@")[0].toLowerCase();
-  if (name !== "create" && name !== "vote" && name !== "cancle" && name !== "list" && name !== "help" && name !== "start") return null;
+  if (name !== "create" && name !== "vote" && name !== "cancle" && name !== "list" && name !== "result" && name !== "help" && name !== "start") return null;
   return { name, argument: arguments_.join(" ") } as TelegramCommand;
 }
 
@@ -18,6 +18,16 @@ export function parseVoteHour(value: string) {
   if (!/^\d{1,2}$/.test(value)) return null;
   const hour = Number(value);
   return hour >= 1 && hour <= 24 ? hour : null;
+}
+
+export function parseTelegramResult(value: string) {
+  const [hourText, aScoreText, bScoreText, ...rest] = value.trim().split(/\s+/);
+  const hour = parseVoteHour(hourText ?? "");
+  if (rest.length || hour === null || !/^\d{1,2}$/.test(aScoreText ?? "") || !/^\d{1,2}$/.test(bScoreText ?? "")) return null;
+  const aScore = Number(aScoreText);
+  const bScore = Number(bScoreText);
+  if (aScore === bScore) return null;
+  return { hour, aScore, bScore, winner: aScore > bScore ? "A" as const : "B" as const };
 }
 
 export function recruitmentScheduledAt(scheduledDate: string, hour: number) {
@@ -50,7 +60,7 @@ export function formatRecruitmentList(recruitments: RecruitmentView[]) {
 }
 
 export function helpMessage() {
-  return ["치증봇 명령어", "/create 9 - 오늘 9시 모집 생성 (그룹 관리자)", "/vote 9 - 오늘 9시 모집 참여", "/cancle 9 - 오늘 9시 참여 취소", "/list - 현재 모집과 참여자 조회"].join("\n");
+  return ["치증봇 명령어", "/create 9 - 오늘 9시 모집 생성 (그룹 관리자)", "/vote 9 - 오늘 9시 모집 참여", "/cancle 9 - 오늘 9시 참여 취소", "/result 9 3 1 - A팀 3점, B팀 1점 결과 등록 (그룹 관리자)", "/list - 현재 모집과 참여자 조회"].join("\n");
 }
 
 export function todayInKorea(date = new Date()) {

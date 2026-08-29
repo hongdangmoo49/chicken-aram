@@ -1,4 +1,5 @@
 import { saveMatchResult } from "../../../../db/site-data";
+import { syncTelegramMvpMessage } from "../../../../db/telegram-mvp";
 import { normalizeMatchResult } from "../../../../lib/match-results";
 import { takeRateLimit } from "../../../../lib/rate-limit";
 import { reportError } from "../../../../lib/observability";
@@ -21,6 +22,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   } catch (error) {
     const errorId = reportError("result.save", error, { matchId });
     return redirectWithToast(request, "/results", "error", `대전 결과를 저장하지 못했습니다. 오류 번호: ${errorId.slice(0, 8)}`);
+  }
+  try {
+    await syncTelegramMvpMessage(matchId);
+  } catch (error) {
+    reportError("telegram.mvp.start", error, { matchId });
   }
   return redirectWithToast(request, "/results", "success", "대전 결과와 선수 승패를 저장하고 MVP 투표를 시작했습니다.");
 }

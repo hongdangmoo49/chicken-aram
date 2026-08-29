@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { formatRecruitment, formatRecruitmentList, parseTelegramCommand, parseTelegramLinkToken, parseVoteHour, recruitmentScheduledAt } from "../lib/telegram-commands.ts";
+import { formatRecruitment, formatRecruitmentList, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, recruitmentScheduledAt } from "../lib/telegram-commands.ts";
 
 test("parses custom recruitment commands without native Telegram polls", () => {
   assert.deepEqual(parseTelegramCommand("/create@chijeung_bot"), { name: "create", argument: "" });
   assert.deepEqual(parseTelegramCommand("/vote 9"), { name: "vote", argument: "9" });
   assert.deepEqual(parseTelegramCommand("/cancle 9"), { name: "cancle", argument: "9" });
   assert.deepEqual(parseTelegramCommand("/list"), { name: "list", argument: "" });
+  assert.deepEqual(parseTelegramCommand("/result 21 3 1"), { name: "result", argument: "21 3 1" });
   assert.deepEqual(parseTelegramCommand("/start"), { name: "start", argument: "" });
   assert.equal(parseTelegramCommand("참가"), null);
   assert.equal(parseVoteHour("9"), 9);
@@ -19,6 +20,9 @@ test("parses custom recruitment commands without native Telegram polls", () => {
   assert.equal(parseTelegramLinkToken("link_short"), null);
   assert.equal(recruitmentScheduledAt("2026-08-29", 21), "2026-08-29T12:00:00.000Z");
   assert.equal(recruitmentScheduledAt("2026-08-29", 24), "2026-08-29T15:00:00.000Z");
+  assert.deepEqual(parseTelegramResult("21 3 1"), { hour: 21, aScore: 3, bScore: 1, winner: "A" });
+  assert.deepEqual(parseTelegramResult("9 1 2"), { hour: 9, aScore: 1, bScore: 2, winner: "B" });
+  assert.equal(parseTelegramResult("21 2 2"), null);
 });
 
 test("lists participants for a created start time", () => {
@@ -65,6 +69,8 @@ test("secures and persists webhook updates", async () => {
   assert.match(route, /createScheduleFromRecruitment/);
   assert.match(route, /recruit:delete-confirm:/);
   assert.match(route, /removeRecruitment/);
+  assert.match(route, /saveTelegramMatchResult/);
+  assert.match(route, /command\.name === "result"/);
   assert.match(database, /\.eq\("scheduled_date", scheduledDate\)/);
   assert.match(database, /update\(\{ status: "expired" \}\).*\.is\("match_id", null\)/);
   assert.match(database, /create_telegram_schedule/);
@@ -92,4 +98,5 @@ test("secures and persists webhook updates", async () => {
   assert.match(linkRoute, /takeRateLimit/);
   assert.match(unlinkRoute, /unlinkTelegramAccount/);
   assert.match(setup, /allowed_updates: \["message", "callback_query"\]/);
+  assert.match(setup, /command: "result"/);
 });
