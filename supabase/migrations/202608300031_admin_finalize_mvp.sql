@@ -14,7 +14,7 @@ declare
   before_points integer;
   before_tier smallint;
   candidate_name text;
-  candidate_team public.match_team;
+  target_team public.match_team;
   match_state public.match_status;
   source_round smallint;
 begin
@@ -34,27 +34,27 @@ begin
   end if;
 
   select member.team, player.nickname, player.tier, player.rank_points
-  into candidate_team, candidate_name, before_tier, before_points
+  into target_team, candidate_name, before_tier, before_points
   from public.match_players as member
   join public.players as player on player.id = member.player_id
   where member.match_id = p_match_id and member.player_id = p_player_id;
-  if candidate_team is null then
+  if target_team is null then
     raise exception 'MVP candidate must be a match participant';
   end if;
 
   if exists (
     select 1 from public.match_mvp_awards as award
-    where award.match_id = p_match_id and award.team = candidate_team
+    where award.match_id = p_match_id and award.team = target_team
   ) then
     raise exception 'MVP voting is already finalized';
   end if;
 
   select greatest(coalesce(max(vote.round), 1), 1)::smallint into source_round
   from public.match_mvp_votes as vote
-  where vote.match_id = p_match_id and vote.candidate_team = candidate_team;
+  where vote.match_id = p_match_id and vote.candidate_team = target_team;
 
   insert into public.match_mvp_awards (match_id, team, player_id, source_round)
-  values (p_match_id, candidate_team, p_player_id, source_round);
+  values (p_match_id, target_team, p_player_id, source_round);
 
   update public.players
   set rank_points = rank_points + 1
@@ -77,8 +77,8 @@ begin
     'matches.mvp.manual_finalize',
     'match',
     p_match_id::text,
-    jsonb_build_object('team', candidate_team, 'votesFinalized', false, 'playerId', p_player_id, 'tier', before_tier, 'points', before_points),
-    jsonb_build_object('team', candidate_team, 'votesFinalized', true, 'playerId', p_player_id, 'nickname', candidate_name, 'tier', after_tier, 'points', after_points)
+    jsonb_build_object('team', target_team, 'votesFinalized', false, 'playerId', p_player_id, 'tier', before_tier, 'points', before_points),
+    jsonb_build_object('team', target_team, 'votesFinalized', true, 'playerId', p_player_id, 'nickname', candidate_name, 'tier', after_tier, 'points', after_points)
   );
 end;
 $$;

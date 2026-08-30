@@ -46,6 +46,9 @@ test("enforces opponent-only voting and awards one RP once", async () => {
   assert.match(adminMigration, /rank_points = rank_points \+ 1/);
   assert.match(adminMigration, /MVP voting is already finalized/);
   assert.match(adminMigration, /matches\.mvp\.manual_finalize/);
+  assert.match(adminMigration, /target_team public\.match_team/);
+  assert.match(adminMigration, /vote\.candidate_team = target_team/);
+  assert.doesNotMatch(adminMigration, /candidate_team public\.match_team/);
   assert.match(telegramMigration, /add column mvp_message_id bigint/);
   assert.match(telegramMvp, /cast_match_mvp_vote/);
   assert.match(telegramMvp, /mvp_message_id/);
