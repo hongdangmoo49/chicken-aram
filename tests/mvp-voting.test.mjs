@@ -19,12 +19,16 @@ test("builds shared Telegram MVP contests for runoff and finalized teams", () =>
 });
 
 test("enforces opponent-only voting and awards one RP once", async () => {
-  const [migration, telegramMigration, telegramMvp, resultRoute, voteRoute, webhook] = await Promise.all([
+  const [migration, adminMigration, telegramMigration, telegramMvp, resultRoute, voteRoute, adminRoute, membersPage, roles, webhook] = await Promise.all([
     readFile(new URL("../supabase/migrations/202608270026_add_opponent_mvp_voting.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608300031_admin_finalize_mvp.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608290030_track_telegram_mvp_message.sql", import.meta.url), "utf8"),
     readFile(new URL("../db/telegram-mvp.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/results/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/mvp-votes/[matchId]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/mvp/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/members/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/roles.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
   ]);
   assert.match(migration, /primary key \(match_id, candidate_team, round, voter_player_id\)/);
@@ -37,6 +41,11 @@ test("enforces opponent-only voting and awards one RP once", async () => {
   assert.match(migration, /rank_points = rank_points - 25/);
   assert.match(migration, /mvp_voting_started_at = case when current_status = 'scheduled'/);
   assert.match(migration, /mvp = case when p_mvp_player_id is null then mvp else mvp_name end/);
+  assert.match(adminMigration, /actor_role is distinct from 'super_admin'/);
+  assert.match(adminMigration, /insert into public\.match_mvp_awards/);
+  assert.match(adminMigration, /rank_points = rank_points \+ 1/);
+  assert.match(adminMigration, /MVP voting is already finalized/);
+  assert.match(adminMigration, /matches\.mvp\.manual_finalize/);
   assert.match(telegramMigration, /add column mvp_message_id bigint/);
   assert.match(telegramMvp, /cast_match_mvp_vote/);
   assert.match(telegramMvp, /mvp_message_id/);
@@ -44,5 +53,12 @@ test("enforces opponent-only voting and awards one RP once", async () => {
   assert.match(telegramMvp, /saveTelegramMatchResult/);
   assert.match(resultRoute, /syncTelegramMvpMessage/);
   assert.match(voteRoute, /syncTelegramMvpMessage/);
+  assert.match(adminRoute, /user\.role !== "super_admin"/);
+  assert.match(adminRoute, /finalizeMatchMvp/);
+  assert.match(adminRoute, /syncTelegramMvpMessage/);
+  assert.match(membersPage, /canManageRoles && <PendingMvpPanel/);
+  assert.match(membersPage, /MVP 확정 · RP \+1/);
+  assert.match(roles, /getPendingMvpMatches/);
+  assert.match(roles, /admin_finalize_match_mvp/);
   assert.match(webhook, /\^mvp:\(\\d\+\):\(\\d\+\)\$/);
 });

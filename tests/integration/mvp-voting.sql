@@ -50,6 +50,27 @@ begin
   update public.players set tier = 4, rank_points = 0 where id = any(player_ids);
   update public.players set rank_points = 25 where id = player_ids[6];
 
+  update public.profiles set role = 'super_admin' where id = user_ids[1];
+  rejected := false;
+  begin
+    perform public.admin_finalize_match_mvp(scheduled_match_id, player_ids[10], user_ids[2]);
+  exception when others then
+    rejected := true;
+  end;
+  if not rejected then raise exception 'regular user manually finalized MVP'; end if;
+  perform public.admin_finalize_match_mvp(scheduled_match_id, player_ids[10], user_ids[1]);
+  select rank_points into actual_points from public.players where id = player_ids[10];
+  if actual_points <> 1 then raise exception 'manual MVP did not receive exactly 1 RP'; end if;
+  rejected := false;
+  begin
+    perform public.admin_finalize_match_mvp(scheduled_match_id, player_ids[10], user_ids[1]);
+  exception when others then
+    rejected := true;
+  end;
+  if not rejected then raise exception 'manual MVP was finalized twice'; end if;
+  select rank_points into actual_points from public.players where id = player_ids[10];
+  if actual_points <> 1 then raise exception 'manual MVP awarded RP more than once'; end if;
+
   insert into public.matches (scheduled_at, played_at, map, status, team_a, team_b, a_score, b_score, winner, mvp_voting_started_at)
   values (now(), now(), '투표 테스트 맵', 'completed', names[1:5], names[6:10], 2, 1, 'A', now())
   returning id into voting_match_id;

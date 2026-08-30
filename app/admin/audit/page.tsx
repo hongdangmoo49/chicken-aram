@@ -13,6 +13,7 @@ const actionLabels: Record<string, string> = {
   "members.role.update": "멤버 권한 변경",
   "members.account.delete": "멤버 로그인 계정 삭제",
   "matches.result.save": "대전 결과 저장",
+  "matches.mvp.manual_finalize": "MVP 수동 확정",
 };
 
 export default async function AuditPage() {
@@ -23,7 +24,7 @@ export default async function AuditPage() {
   return <PageShell active="admin">
     <header className="page-intro">
       <div><span className="eyebrow">ADMIN AUDIT</span><h1>변경 기록</h1></div>
-      <p>관리자가 변경한 티어·권한·대전 결과의 이전 값과 변경 값을 확인합니다.</p>
+      <p>관리자가 변경한 티어·권한·대전 결과·MVP의 이전 값과 변경 값을 확인합니다.</p>
     </header>
     <nav className="admin-subnav"><Link className="button ghost" href="/admin/members">멤버 관리</Link></nav>
     <section className="audit-list">

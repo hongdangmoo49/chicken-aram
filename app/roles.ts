@@ -1,6 +1,8 @@
+import { revalidateTag } from "next/cache";
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import type { AppRole } from "../lib/app-roles";
 import type { MemberRoleChange } from "../lib/member-roles";
+import { currentMvpRound } from "../lib/mvp-voting";
 import { calculateRoundRecord, formatRecentMatchRecord, type PlayerMatchResult, type PlayerRoundResult } from "../lib/player-records";
 
 export type { AppRole } from "../lib/app-roles";
@@ -28,6 +30,20 @@ export type AuditLog = {
   before: unknown;
   after: unknown;
   createdAt: string;
+};
+
+export type PendingMvpMatch = {
+  id: number;
+  playedAt: string;
+  map: string;
+  aScore: number;
+  bScore: number;
+  contests: {
+    team: "A" | "B";
+    round: number;
+    votesCast: number;
+    candidates: { id: number; nickname: string }[];
+  }[];
 };
 
 export async function getMembers(includeEmails = false): Promise<Member[]> {
@@ -92,6 +108,58 @@ export async function setMemberRoles(changes: MemberRoleChange[], actorId: strin
   const admin = createSupabaseAdminClient();
   const { error } = await admin.rpc("set_member_roles", { changes, p_actor_id: actorId });
   if (error) throw new Error(`멤버 권한 변경 실패: ${error.message}`);
+}
+
+export async function getPendingMvpMatches(): Promise<PendingMvpMatch[]> {
+  const admin = createSupabaseAdminClient();
+  // ponytail: 개인 리그의 최근 완료 경기 50개만 확인. 누적 미완료가 50개를 넘으면 DB RPC로 필터링한다.
+  const { data: matches, error: matchError } = await admin
+    .from("matches")
+    .select("id,played_at,map,a_score,b_score")
+    .eq("status", "completed")
+    .not("mvp_voting_started_at", "is", null)
+    .order("played_at", { ascending: false })
+    .limit(50);
+  if (matchError) throw new Error(`미완료 MVP 경기 조회 실패: ${matchError.message}`);
+  const matchIds = (matches ?? []).map((match) => Number(match.id));
+  if (!matchIds.length) return [];
+
+  const [memberResult, voteResult, awardResult] = await Promise.all([
+    admin.from("match_players").select("match_id,player_id,team,players(nickname)").in("match_id", matchIds),
+    admin.from("match_mvp_votes").select("match_id,candidate_team,round").in("match_id", matchIds),
+    admin.from("match_mvp_awards").select("match_id,team").in("match_id", matchIds),
+  ]);
+  const error = memberResult.error ?? voteResult.error ?? awardResult.error;
+  if (error) throw new Error(`미완료 MVP 현황 조회 실패: ${error.message}`);
+
+  const awards = new Set((awardResult.data ?? []).map((award) => `${award.match_id}:${award.team}`));
+  return (matches ?? []).flatMap((match) => {
+    const matchId = Number(match.id);
+    const contests = (["A", "B"] as const).flatMap((team) => {
+      if (awards.has(`${matchId}:${team}`)) return [];
+      const votes = (voteResult.data ?? [])
+        .filter((vote) => Number(vote.match_id) === matchId && vote.candidate_team === team)
+        .map((vote) => ({ round: Number(vote.round), candidatePlayerId: 0 }));
+      const round = currentMvpRound(votes);
+      const candidates = (memberResult.data ?? [])
+        .filter((member) => Number(member.match_id) === matchId && member.team === team)
+        .map((member) => ({ id: Number(member.player_id), nickname: (member.players as unknown as { nickname: string }).nickname }))
+        .sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+      return [{ team, round, votesCast: votes.filter((vote) => vote.round === round).length, candidates }];
+    });
+    return contests.length ? [{ id: matchId, playedAt: String(match.played_at), map: String(match.map), aScore: Number(match.a_score), bScore: Number(match.b_score), contests }] : [];
+  });
+}
+
+export async function finalizeMatchMvp(input: { matchId: number; playerId: number; actorId: string }) {
+  const { error } = await createSupabaseAdminClient().rpc("admin_finalize_match_mvp", {
+    p_match_id: input.matchId,
+    p_player_id: input.playerId,
+    p_actor_id: input.actorId,
+  });
+  if (error) throw new Error(`MVP 수동 확정 실패: ${error.message}`);
+  revalidateTag("players", { expire: 0 });
+  revalidateTag("matches", { expire: 0 });
 }
 
 export async function getAuditLogs(): Promise<AuditLog[]> {
