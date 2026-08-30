@@ -58,7 +58,10 @@ test("enforces opponent-only voting and awards one RP once", async () => {
   assert.match(adminRoute, /syncTelegramMvpMessage/);
   assert.match(membersPage, /canManageRoles && <PendingMvpPanel/);
   assert.match(membersPage, /MVP 확정 · RP \+1/);
+  assert.match(membersPage, /현재 투표 내용/);
+  assert.match(membersPage, /voterNickname.*candidateNickname/);
   assert.match(roles, /getPendingMvpMatches/);
+  assert.match(roles, /voter_player_id,candidate_player_id/);
   assert.match(roles, /admin_finalize_match_mvp/);
   assert.match(webhook, /\^mvp:\(\\d\+\):\(\\d\+\)\$/);
 });

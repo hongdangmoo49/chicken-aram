@@ -23,6 +23,7 @@ function PendingMvpPanel({ matches }: { matches: PendingMvpMatch[] }) {
         <label htmlFor={`mvp-${match.id}-${contest.team}`}><strong>{contest.team}팀 MVP</strong><span>{contest.round}라운드 · {contest.votesCast}/5명 투표</span></label>
         <select defaultValue="" id={`mvp-${match.id}-${contest.team}`} name="playerId" required><option disabled value="">선수 선택</option>{contest.candidates.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.nickname}</option>)}</select>
         <button className="button primary" type="submit">MVP 확정 · RP +1</button>
+        <div className="pending-mvp-votes"><strong>현재 투표 내용</strong>{contest.votes.length ? <div>{contest.votes.map((vote) => <span key={vote.voterId}>{vote.voterNickname} <b>→ {vote.candidateNickname}</b></span>)}</div> : <p>아직 투표한 선수가 없습니다.</p>}</div>
       </form>)}</div>
     </article>)}</div> : <p className="member-empty">MVP 투표가 미완료된 경기가 없습니다.</p>}
   </section>;
