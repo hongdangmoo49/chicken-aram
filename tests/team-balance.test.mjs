@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { balanceTeams, calculateTeamRankScores, playerPower } from "../db/team-balance.ts";
 
-test("uses persisted RP with 50-point tier gaps", () => {
-  assert.deepEqual([1, 2, 3, 4, 5].map((tier) => playerPower({ tier, points: 0 })), [200, 150, 100, 50, 0]);
-  assert.equal(playerPower({ tier: 3, points: 15 }), 115);
+test("uses persisted RP with 25-point tier gaps", () => {
+  assert.deepEqual([1, 2, 3, 4, 5].map((tier) => playerPower({ tier, points: 0 })), [100, 75, 50, 25, 0]);
+  assert.equal(playerPower({ tier: 3, points: 15 }), 65);
 });
 
 test("sums five complete player rank scores per team", () => {

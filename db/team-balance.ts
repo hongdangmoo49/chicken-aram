@@ -24,7 +24,7 @@ export function prepareTelegramTeams(votes: { telegramUserId: number; displayNam
 }
 
 export function playerPower(player: Pick<BalancePlayer, "tier" | "points">) {
-  return (5 - player.tier) * 50 + player.points;
+  return (5 - player.tier) * 25 + player.points;
 }
 
 export function calculateTeamRankScores(members: { team: "A" | "B"; rankScore: number | null }[]) {

@@ -11,7 +11,7 @@ test("prepares balanced teams only when all Telegram voters have playable accoun
   if (ready.ok) {
     assert.equal(ready.teamA.length, 5);
     assert.equal(ready.teamB.length, 5);
-    assert.equal(ready.teamAScore - ready.teamBScore, ready.teamA.reduce((sum, player) => sum + (5 - player.tier) * 50 + player.points, 0) - ready.teamB.reduce((sum, player) => sum + (5 - player.tier) * 50 + player.points, 0));
+    assert.equal(ready.teamAScore - ready.teamBScore, ready.teamA.reduce((sum, player) => sum + (5 - player.tier) * 25 + player.points, 0) - ready.teamB.reduce((sum, player) => sum + (5 - player.tier) * 25 + player.points, 0));
   }
   const missing = prepareTelegramTeams(votes, players.slice(0, 9));
   assert.deepEqual(missing, { ok: false, invalidParticipants: ["U10 (@u10)"] });
