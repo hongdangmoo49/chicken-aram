@@ -48,7 +48,7 @@ begin
   end if;
 
   update public.players set tier = 4, rank_points = 0 where id = any(player_ids);
-  update public.players set rank_points = 25 where id = player_ids[6];
+  update public.players set rank_points = 15 where id = player_ids[6];
 
   update public.profiles set role = 'super_admin' where id = user_ids[1];
   rejected := false;

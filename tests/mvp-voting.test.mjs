@@ -19,9 +19,10 @@ test("builds shared Telegram MVP contests for runoff and finalized teams", () =>
 });
 
 test("enforces opponent-only voting and awards one RP once", async () => {
-  const [migration, adminMigration, telegramMigration, telegramMvp, resultRoute, voteRoute, adminRoute, membersPage, roles, webhook] = await Promise.all([
+  const [migration, adminMigration, promotionMigration, telegramMigration, telegramMvp, resultRoute, voteRoute, adminRoute, membersPage, roles, webhook] = await Promise.all([
     readFile(new URL("../supabase/migrations/202608270026_add_opponent_mvp_voting.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608300031_admin_finalize_mvp.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202608310032_lower_promotion_threshold.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608290030_track_telegram_mvp_message.sql", import.meta.url), "utf8"),
     readFile(new URL("../db/telegram-mvp.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/results/[id]/route.ts", import.meta.url), "utf8"),
@@ -38,7 +39,8 @@ test("enforces opponent-only voting and awards one RP once", async () => {
   assert.match(migration, /primary key \(match_id, team\)/);
   assert.match(migration, /revoke all on table public\.match_mvp_votes from public, anon, authenticated/);
   assert.match(migration, /rank_points = rank_points \+ 1/);
-  assert.match(migration, /rank_points = rank_points - 25/);
+  assert.match(promotionMigration, /rank_points = rank_points - 15/g);
+  assert.doesNotMatch(promotionMigration, /rank_points > 25|rank_points - 25/);
   assert.match(migration, /mvp_voting_started_at = case when current_status = 'scheduled'/);
   assert.match(migration, /mvp = case when p_mvp_player_id is null then mvp else mvp_name end/);
   assert.match(adminMigration, /actor_role is distinct from 'super_admin'/);

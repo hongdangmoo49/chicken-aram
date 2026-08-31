@@ -1,7 +1,7 @@
 export type PlayerTierChange = { playerId: number; tier: number; order: number; points?: number };
 export const coachTier = 6;
 export const playerTiers = [1, 2, 3, 4, 5, coachTier] as const;
-export const promotionPoints = 25;
+export const promotionPoints = 15;
 export const demotionPoints = -15;
 
 export function playerTierLabel(tier: number) {
