@@ -26,6 +26,19 @@ test("balances ten players while separating a requested pair", () => {
   assert.notDeepEqual(new Set(rebalanced.teamA.map((player) => player.id)), new Set(result.teamA.map((player) => player.id)));
 });
 
+test("uses positions to break equal-score ties independent of input order", () => {
+  const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: 3, points: 0, positions: index < 2 ? ["탱커"] : index < 4 ? ["서포터"] : [] }));
+  const first = balanceTeams(players, []);
+  const reversed = balanceTeams([...players].reverse(), []);
+  const ids = (team) => team.map((player) => player.id).sort((a, b) => a - b);
+  assert.deepEqual(ids(first.teamA), ids(reversed.teamA));
+  assert.deepEqual(ids(first.teamB), ids(reversed.teamB));
+  for (const team of [first.teamA, first.teamB]) {
+    assert.equal(team.filter((player) => player.positions[0] === "탱커").length, 1);
+    assert.equal(team.filter((player) => player.positions[0] === "서포터").length, 1);
+  }
+});
+
 test("keeps coaches out of playable team assignments", () => {
   const players = Array.from({ length: 10 }, (_, index) => ({ id: index + 1, nickname: `P${index + 1}`, tier: index === 9 ? 6 : 5, wins: 0, losses: 0, points: 0 }));
   assert.throws(() => balanceTeams(players, []), /코치는 대전 참가자로 선택할 수 없습니다/);

@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import { recruitmentScheduledAt, type RecruitmentView, type RecruitmentVoteView } from "../lib/telegram-commands";
+import { normalizePlayerPositions } from "../lib/player-positions";
 import { prepareTelegramTeams, type LinkedTelegramPlayer } from "./team-balance";
 
 type RecruitmentRow = {
@@ -144,11 +145,11 @@ export async function createScheduleFromRecruitment(input: { chatId: number; sch
   if (!actor || (actor.role !== "admin" && actor.role !== "super_admin")) return { status: "not_authorized" as const };
 
   const telegramUserIds = recruitment.view.votes.map((vote) => vote.telegramUserId);
-  const { data: profiles, error: profileError } = await admin.from("profiles").select("telegram_user_id,players(id,nickname,tier,wins,losses,rank_points,is_active)").in("telegram_user_id", telegramUserIds);
+  const { data: profiles, error: profileError } = await admin.from("profiles").select("telegram_user_id,players(id,nickname,tier,rank_points,preferred_positions,is_active)").in("telegram_user_id", telegramUserIds);
   if (profileError) fail("Telegram 참가자 계정 조회 실패", profileError);
   const linkedPlayers = (profiles ?? []).flatMap((profile) => {
-    const player = profile.players as unknown as { id: number | string; nickname: string; tier: number; wins: number; losses: number; rank_points: number | string; is_active: boolean } | null;
-    return player ? [{ telegramUserId: Number(profile.telegram_user_id), id: Number(player.id), nickname: player.nickname, tier: Number(player.tier), wins: Number(player.wins), losses: Number(player.losses), points: Number(player.rank_points), active: player.is_active } satisfies LinkedTelegramPlayer] : [];
+    const player = profile.players as unknown as { id: number | string; nickname: string; tier: number; rank_points: number | string; preferred_positions: string[]; is_active: boolean } | null;
+    return player ? [{ telegramUserId: Number(profile.telegram_user_id), id: Number(player.id), nickname: player.nickname, tier: Number(player.tier), points: Number(player.rank_points), positions: normalizePlayerPositions(player.preferred_positions ?? []) ?? [], active: player.is_active } satisfies LinkedTelegramPlayer] : [];
   });
   const teams = prepareTelegramTeams(recruitment.view.votes, linkedPlayers);
   if (!teams.ok) return { status: "invalid_participants" as const, participants: teams.invalidParticipants };

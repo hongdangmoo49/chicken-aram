@@ -1,10 +1,11 @@
+import type { PlayerPosition } from "../lib/player-positions";
+
 export type BalancePlayer = {
   id: number;
   nickname: string;
   tier: number;
-  wins: number;
-  losses: number;
   points: number;
+  positions?: PlayerPosition[];
 };
 
 export type LinkedTelegramPlayer = BalancePlayer & { telegramUserId: number; active: boolean };
@@ -44,7 +45,9 @@ export function balanceTeams(players: BalancePlayer[], separatedGroups: number[]
   if (players.some((player) => player.tier === 6)) throw new Error("코치는 대전 참가자로 선택할 수 없습니다.");
   if (separatedGroups.some((group) => group.length > 2)) throw new Error("분리 그룹은 최대 2명까지 지정할 수 있습니다.");
 
-  const indexById = new Map(players.map((player, index) => [player.id, index]));
+  const orderedPlayers = [...players].sort((a, b) => a.id - b.id);
+  const selectedPositions = [...new Set(orderedPlayers.flatMap((player) => player.positions ?? []))];
+  const indexById = new Map(orderedPlayers.map((player, index) => [player.id, index]));
   const constraints = separatedGroups
     .filter((group) => group.length === 2)
     .map(([a, b]) => [indexById.get(a), indexById.get(b)] as const);
@@ -52,22 +55,33 @@ export function balanceTeams(players: BalancePlayer[], separatedGroups: number[]
 
   let bestMask = 0;
   let bestDifference = Number.POSITIVE_INFINITY;
+  let bestPositionDifference = Number.POSITIVE_INFINITY;
   let fallbackMask = 0;
   let fallbackDifference = Number.POSITIVE_INFINITY;
+  let fallbackPositionDifference = Number.POSITIVE_INFINITY;
   const previousTeamA = new Set(previousTeamAIds);
-  for (let mask = 1; mask < 1 << players.length; mask += 2) {
+  for (let mask = 1; mask < 1 << orderedPlayers.length; mask += 2) {
     let count = 0;
-    for (let index = 0; index < players.length; index++) count += (mask >> index) & 1;
+    for (let index = 0; index < orderedPlayers.length; index++) count += (mask >> index) & 1;
     if (count !== 5 || constraints.some(([a, b]) => ((mask >> a!) & 1) === ((mask >> b!) & 1))) continue;
 
-    const difference = Math.abs(players.reduce((total, player, index) => total + (((mask >> index) & 1) ? playerPower(player) : -playerPower(player)), 0));
-    const samePartition = previousTeamA.size === 5 && (players.every((player, index) => Boolean((mask >> index) & 1) === previousTeamA.has(player.id)) || players.every((player, index) => Boolean((mask >> index) & 1) !== previousTeamA.has(player.id)));
+    const difference = Math.abs(orderedPlayers.reduce((total, player, index) => total + (((mask >> index) & 1) ? playerPower(player) : -playerPower(player)), 0));
+    const positionDifference = selectedPositions.reduce((total, position) => total + Math.abs(orderedPlayers.reduce((balance, player, index) => {
+      const preference = player.positions?.indexOf(position) ?? -1;
+      return balance + (preference < 0 ? 0 : ((mask >> index) & 1 ? 1 : -1) * (2 - preference));
+    }, 0)), 0);
+    const samePartition = previousTeamA.size === 5 && (orderedPlayers.every((player, index) => Boolean((mask >> index) & 1) === previousTeamA.has(player.id)) || orderedPlayers.every((player, index) => Boolean((mask >> index) & 1) !== previousTeamA.has(player.id)));
     if (samePartition) {
-      if (difference < fallbackDifference) { fallbackDifference = difference; fallbackMask = mask; }
+      if (difference < fallbackDifference || (difference === fallbackDifference && positionDifference < fallbackPositionDifference)) {
+        fallbackDifference = difference;
+        fallbackPositionDifference = positionDifference;
+        fallbackMask = mask;
+      }
       continue;
     }
-    if (difference < bestDifference) {
+    if (difference < bestDifference || (difference === bestDifference && positionDifference < bestPositionDifference)) {
       bestDifference = difference;
+      bestPositionDifference = positionDifference;
       bestMask = mask;
     }
   }
@@ -75,8 +89,8 @@ export function balanceTeams(players: BalancePlayer[], separatedGroups: number[]
   if (!bestMask) throw new Error("분리 조건을 만족하는 팀 조합이 없습니다.");
 
   return {
-    teamA: players.filter((_, index) => (bestMask >> index) & 1),
-    teamB: players.filter((_, index) => !((bestMask >> index) & 1)),
+    teamA: orderedPlayers.filter((_, index) => (bestMask >> index) & 1),
+    teamB: orderedPlayers.filter((_, index) => !((bestMask >> index) & 1)),
     difference: bestDifference,
   };
 }
