@@ -93,7 +93,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(results, /결과 수정/);
   assert.match(resultRoute, /user\.role === "user"/);
   assert.match(resultRoute, /normalizeMatchResult/);
-  assert.match(siteData, /eq\("status", "scheduled"\)/);
+  assert.match(siteData, /rpc\("update_scheduled_match"/);
+  assert.match(siteData, /rpc\("delete_scheduled_match"/);
   assert.match(migration, /delete from public\.matches/);
   assert.match(migration, /new\.raw_user_meta_data/);
   assert.match(positionPriorityMigration, /cardinality\(preferred_positions\) <= 2/);
@@ -166,9 +167,9 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(positionPicker, /primary === "올라운더"/);
   assert.match(positionPicker, /position !== "올라운더" && position !== primary/);
   assert.match(playerUi, /index \+ 1.*순위/);
-  assert.match(authActions, /admin\.listUsers/);
-  assert.match(authActions, /from\("profiles"\)\.select\("display_name"\)/);
-  assert.match(authActions, /이미 사용 중인 닉네임/);
+  assert.doesNotMatch(authActions, /admin\.listUsers/);
+  assert.doesNotMatch(authActions, /from\("profiles"\)\.select\("display_name"\)/);
+  assert.doesNotMatch(authActions, /이미 가입된 이메일/);
   assert.match(authActions, /로그인했습니다/);
   assert.match(authActions, /emailRedirectTo/);
   assert.match(authActions, /인증 메일/);

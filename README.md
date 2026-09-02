@@ -31,8 +31,8 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ## Supabase 준비
 
 1. Supabase에서 새 프로젝트를 만듭니다.
-2. SQL Editor에서 [`supabase/migrations/202607200001_initial_schema.sql`](supabase/migrations/202607200001_initial_schema.sql)을 실행합니다.
-3. Authentication → Sign In / Providers에서 `Confirm email`을 끕니다.
+2. Supabase CLI로 프로젝트를 연결하고 `npx supabase db push`를 실행해 `supabase/migrations` 전체를 순서대로 적용합니다.
+3. Authentication → Sign In / Providers에서 `Confirm email`을 켭니다.
 4. 회원가입을 완료한 관리자 계정 하나를 아래 SQL로 승격합니다.
 
 ```sql
@@ -45,7 +45,7 @@ where id = (select id from auth.users where email = 'admin@example.com');
 
 ## Vercel 배포
 
-GitHub 저장소를 Vercel에 Import한 다음 Framework Preset은 `Next.js`를 사용합니다. Build Command와 Output Directory는 기본값을 유지하고, 프로젝트의 Environment Variables에 `.env.example`의 세 값을 등록합니다.
+GitHub 저장소를 Vercel에 Import한 다음 Framework Preset은 `Next.js`를 사용합니다. Build Command와 Output Directory는 기본값을 유지하고, 프로젝트의 Environment Variables에 `.env.example`의 서비스 환경변수를 등록합니다.
 
 ## 검증
 
