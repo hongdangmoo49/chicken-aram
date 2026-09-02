@@ -54,3 +54,5 @@ npm run build
 npm run lint
 node --experimental-strip-types --test tests/*.test.mjs
 ```
+
+원격 통합 테스트는 실제 데이터를 생성·삭제하므로 운영 프로젝트에서는 실행되지 않습니다. 별도 Supabase 테스트 프로젝트를 준비한 뒤 `SUPABASE_TEST_PROJECT_REF`와 `ALLOW_REMOTE_INTEGRATION_TESTS=true`를 명시한 환경에서만 `npm run test:integration`을 실행하세요.

@@ -2,15 +2,16 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import test from "node:test";
 import { createClient } from "@supabase/supabase-js";
+import { remoteIntegrationTarget } from "./remote-test-guard.mjs";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const configured = Boolean(url && publishableKey && serviceRoleKey);
+const target = remoteIntegrationTarget();
 
 const client = (key) => createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 
-test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: configured ? false : "Supabase smoke credentials are not configured" }, async () => {
+test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: target.allowed ? false : "A non-production Supabase test project and explicit opt-in are required" }, async () => {
   const admin = client(serviceRoleKey);
   const anonymous = client(publishableKey);
 
