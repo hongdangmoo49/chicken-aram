@@ -101,7 +101,7 @@ async function loadPlayers(): Promise<Player[]> {
     });
 }
 
-export const getPlayers = unstable_cache(loadPlayers, ["players-position-priority-v5"], { revalidate: CACHE_SECONDS, tags: [PLAYERS_CACHE_TAG] });
+export const getPlayers = unstable_cache(loadPlayers, ["players-position-priority-v6"], { revalidate: CACHE_SECONDS, tags: [PLAYERS_CACHE_TAG] });
 
 async function loadMatches(options: { status?: Match["status"]; limit?: number; offset?: number; ascending?: boolean } = {}): Promise<Match[]> {
   const supabase = createSupabasePublicClient();
