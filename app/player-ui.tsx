@@ -16,5 +16,5 @@ export function PlayerAvatar({ player, large = false }: { player: Pick<Player, "
 }
 
 export function PlayerPositions({ positions }: { positions: readonly PlayerPosition[] }) {
-  return positions.length ? <span className="position-list">{positions.map((position) => <span className="position-chip" key={position}>{position}</span>)}</span> : null;
+  return positions.length ? <span className="position-list">{positions.map((position, index) => <span className="position-chip" key={position}>{index + 1}순위 · {position}</span>)}</span> : null;
 }

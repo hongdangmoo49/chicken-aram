@@ -255,10 +255,10 @@ button, input, select { font: inherit; }
 .position-form > div:first-child { display: flex; justify-content: space-between; align-items: center; }
 .position-form > div:first-child strong { font-size: 12px; }
 .position-form > div:first-child span, .position-form p { margin: 0; color: var(--muted); font-size: 11px; }
-.position-options { display: flex; flex-wrap: wrap; gap: 7px; }
-.position-option { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; background: #0e1116; color: var(--muted); font-size: 12px; font-weight: 750; cursor: pointer; }
-.position-option[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: #ffad72; }
-.position-option:disabled { opacity: .35; cursor: not-allowed; }
+.position-priority-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.position-priority-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 11px; font-weight: 750; }
+.position-priority-grid select { width: 100%; min-height: 42px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #0e1116; color: var(--text); }
+.position-priority-grid select:disabled { opacity: .4; cursor: not-allowed; }
 .position-form .button { width: fit-content; }
 .thumbnail-form { display: grid; gap: 12px; }
 .thumbnail-form input[type="file"] { height: auto; padding: 10px; }
@@ -387,6 +387,7 @@ button, input, select { font: inherit; }
 @media (max-width: 900px) {
   .site-header { padding: 0 20px; }
   .account-copy { display: none; }
+  .position-priority-grid { grid-template-columns: 1fr; }
   .member-heading { display: grid; }
   .pending-mvp-match > header, .pending-mvp-form { grid-template-columns: 1fr; display: grid; }
   .pending-mvp-match > header b { justify-self: start; }

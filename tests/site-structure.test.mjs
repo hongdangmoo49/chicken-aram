@@ -56,6 +56,11 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
     readFile(new URL("app/toast.tsx", root), "utf8"),
     readFile(new URL("app/globals.css", root), "utf8"),
   ]);
+  const [positionPriorityMigration, positionPicker, playerUi] = await Promise.all([
+    readFile(new URL("supabase/migrations/202609020033_prioritize_player_positions.sql", root), "utf8"),
+    readFile(new URL("app/profile/position-picker.tsx", root), "utf8"),
+    readFile(new URL("app/player-ui.tsx", root), "utf8"),
+  ]);
   assert.match(design, /Responsive Rules/);
   assert.match(tiers, /TierDragBoard players=\{players\}/);
   assert.match(tierDragBoard, /tier-player-card/);
@@ -91,7 +96,8 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(siteData, /eq\("status", "scheduled"\)/);
   assert.match(migration, /delete from public\.matches/);
   assert.match(migration, /new\.raw_user_meta_data/);
-  assert.match(positionMigration, /cardinality\(preferred_positions\) <= 3/);
+  assert.match(positionPriorityMigration, /cardinality\(preferred_positions\) <= 2/);
+  assert.match(positionPriorityMigration, /preferred_positions\[1\] <> preferred_positions\[2\]/);
   assert.match(positionMigration, /올라운더/);
   assert.match(batchTierMigration, /set_player_tiers/);
   assert.match(batchTierMigration, /updated_count <> jsonb_array_length/);
@@ -154,6 +160,12 @@ test("ships the requested pages, Supabase auth, and a design contract", async ()
   assert.match(nicknameRoute, /redirectWithToast/);
   assert.match(thumbnailRoute, /redirectWithToast/);
   assert.match(positionRoute, /normalizePlayerPositions/);
+  assert.match(positionRoute, /primaryPosition/);
+  assert.match(positionRoute, /secondaryPosition/);
+  assert.match(positionPicker, /1순위 필수 · 2순위 선택/);
+  assert.match(positionPicker, /primary === "올라운더"/);
+  assert.match(positionPicker, /position !== "올라운더" && position !== primary/);
+  assert.match(playerUi, /index \+ 1.*순위/);
   assert.match(authActions, /admin\.listUsers/);
   assert.match(authActions, /from\("profiles"\)\.select\("display_name"\)/);
   assert.match(authActions, /이미 사용 중인 닉네임/);

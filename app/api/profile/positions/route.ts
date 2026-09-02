@@ -10,8 +10,10 @@ export async function POST(request: Request) {
   if (!(await takeRateLimit("profile-write", user.id, 30, 600))) return redirectWithToast(request, "/profile", "error", "변경 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
 
   const form = await request.formData();
-  const positions = normalizePlayerPositions(form.getAll("positions").map(String));
-  if (!positions) return redirectWithToast(request, "/profile", "error", "선호 포지션은 최대 3개까지 선택해 주세요.");
+  const primaryPosition = String(form.get("primaryPosition") ?? "");
+  const secondaryPosition = String(form.get("secondaryPosition") ?? "");
+  const positions = normalizePlayerPositions([primaryPosition, secondaryPosition].filter(Boolean));
+  if (!primaryPosition || !positions) return redirectWithToast(request, "/profile", "error", "1순위와 2순위 포지션을 확인해 주세요.");
 
   const profile = await getPlayerProfile(user.id);
   if (!profile) return redirectWithToast(request, "/profile", "error", "프로필을 찾을 수 없습니다.");
