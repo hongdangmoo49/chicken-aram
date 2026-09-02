@@ -26,7 +26,7 @@ export default async function SchedulePage() {
   const [upcoming, players] = await Promise.all([getMatches({ status: "scheduled", limit: 50, ascending: true }), getPlayers()]);
   const members = await getMatchParticipants(upcoming.map((match) => match.id));
   return <PageShell active="schedule">
-    <header className="page-intro"><div><span className="eyebrow">UPCOMING MATCHES</span><h1>대전 예정</h1></div><p>참가자 10명을 고르면 티어와 승리 +3점·패배 -3점 합계를 기준으로 가장 균형에 가까운 A팀과 B팀을 만듭니다.</p></header>
+    <header className="page-intro"><div><span className="eyebrow">UPCOMING MATCHES</span><h1>대전 예정</h1></div><p>티어 기본점수와 RP로 팀 점수 차이를 최소화하고, 동점 조합은 1·2순위 포지션 분포가 더 고른 팀을 선택합니다.</p></header>
     <div className="schedule-grid">
       <div className="match-list">{upcoming.length ? upcoming.map((match) => {
         const matchMembers = members.filter((member) => member.matchId === match.id);
