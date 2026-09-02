@@ -1,10 +1,14 @@
 import { timingSafeEqual } from "node:crypto";
 import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, createScheduleFromRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, removeRecruitment, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
 import { castTelegramMvpVote, saveTelegramMatchResult, syncTelegramMvpMessage } from "../../../../db/telegram-mvp";
+import { getTelegramProfile, unlinkTelegramProfile, updateTelegramNickname, updateTelegramPositions } from "../../../../db/telegram-profile";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
 import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
+import { normalizePlayerPositions, telegramPositionFromCode, telegramPositionOptions } from "../../../../lib/player-positions";
+import { takeRateLimit } from "../../../../lib/rate-limit";
 import { siteUrl } from "../../../../lib/site-url";
+import { formatTelegramProfile } from "../../../../lib/telegram-profile";
 
 type TelegramMessage = {
   message_id: number;
@@ -49,6 +53,43 @@ function createdScheduleText(result: Extract<Awaited<ReturnType<typeof createSch
   return [`✅ 대전 예정 생성 완료`, "", `A팀 · 랭크 ${result.teamAScore}점`, result.teamA.map((player) => player.nickname).join(" · "), "", `B팀 · 랭크 ${result.teamBScore}점`, result.teamB.map((player) => player.nickname).join(" · "), "", `팀 점수 차이 ${result.difference}점`].join("\n");
 }
 
+const profileSiteKeyboard = (): TelegramInlineKeyboard => ({ inline_keyboard: [[{ text: "🔗 사이트에서 Telegram 연동", url: `${siteUrl}/profile` }]] });
+
+function profileKeyboard(): TelegramInlineKeyboard {
+  return { inline_keyboard: [
+    [{ text: "✏️ 닉네임 수정", callback_data: "profile:nickname" }, { text: "🎯 포지션 수정", callback_data: "profile:positions" }],
+    [{ text: "🔓 Telegram 연동 해제", callback_data: "profile:unlink" }],
+    [{ text: "🌐 사이트에서 프로필 보기", url: `${siteUrl}/profile` }],
+  ] };
+}
+
+function profileBackKeyboard(): TelegramInlineKeyboard {
+  return { inline_keyboard: [[{ text: "⬅️ 내 프로필", callback_data: "profile:view" }]] };
+}
+
+function primaryPositionKeyboard(): TelegramInlineKeyboard {
+  const buttons = telegramPositionOptions().map(({ position, code }) => ({ text: position, callback_data: `profile:position:p:${code}` }));
+  return { inline_keyboard: [buttons.slice(0, 2), buttons.slice(2, 4), buttons.slice(4, 6), buttons.slice(6), [{ text: "취소", callback_data: "profile:view" }]] };
+}
+
+function secondaryPositionKeyboard(primaryCode: string): TelegramInlineKeyboard {
+  const primary = telegramPositionFromCode(primaryCode);
+  const buttons = telegramPositionOptions().filter(({ position }) => position !== "올라운더" && position !== primary).map(({ position, code }) => ({ text: position, callback_data: `profile:position:s:${primaryCode}:${code}` }));
+  return { inline_keyboard: [[{ text: "선택 안 함", callback_data: `profile:position:s:${primaryCode}:n` }], buttons.slice(0, 2), buttons.slice(2, 4), buttons.slice(4), [{ text: "취소", callback_data: "profile:view" }]] };
+}
+
+async function showTelegramProfile(chatId: number, telegramUserId: number, messageId?: number) {
+  const profile = await getTelegramProfile(telegramUserId);
+  const text = profile ? formatTelegramProfile(profile) : "🔗 치증 계정과 Telegram이 연동되지 않았습니다.\n사이트에 로그인한 뒤 Telegram 앱으로 연동해 주세요.";
+  const keyboard = profile ? profileKeyboard() : profileSiteKeyboard();
+  if (messageId) await editTelegramMessage(chatId, messageId, text, keyboard);
+  else await sendTelegramMessage(chatId, text, keyboard);
+}
+
+async function allowTelegramProfileWrite(telegramUserId: number) {
+  return takeRateLimit("telegram-profile-write", String(telegramUserId), 20, 600);
+}
+
 async function handleMessage(message: TelegramMessage) {
   if (!message.text || !message.from) return;
   const command = parseTelegramCommand(message.text);
@@ -63,6 +104,21 @@ async function handleMessage(message: TelegramMessage) {
     if (linked.status === "already_linked") return void await sendTelegramMessage(chatId, "이 텔레그램 계정은 이미 다른 치증 계정과 연동되어 있습니다.");
     return void await sendTelegramMessage(chatId, `✅ ${linked.displayName} 치증 계정과 연동했습니다. 이제 텔레그램 투표가 해당 계정에 귀속됩니다.`);
   }
+  if (message.chat.type === "private") {
+    if (command.name === "profile" || command.name === "start") return void await showTelegramProfile(chatId, userId);
+    if (command.name === "help") return void await sendTelegramMessage(chatId, ["치증봇 개인 명령어", "/profile - 내 프로필 조회·수정", "/nickname 새이름 - 닉네임 수정"].join("\n"));
+    if (command.name === "nickname") {
+      const nickname = command.argument.trim();
+      if (!nickname || nickname.length > 30) return void await sendTelegramMessage(chatId, "사용법: /nickname 새이름\n닉네임은 1~30자로 입력해 주세요.");
+      if (!(await allowTelegramProfileWrite(userId))) return void await sendTelegramMessage(chatId, "프로필 변경 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.");
+      const result = await updateTelegramNickname(userId, nickname);
+      if (result === "unlinked") return void await showTelegramProfile(chatId, userId);
+      if (result === "duplicate") return void await sendTelegramMessage(chatId, "이미 사용 중인 닉네임입니다.");
+      return void await showTelegramProfile(chatId, userId);
+    }
+    return void await sendTelegramMessage(chatId, "개인 채팅에서는 /profile 또는 /nickname 새이름을 사용해 주세요.");
+  }
+  if (command.name === "profile" || command.name === "nickname") return void await sendTelegramMessage(chatId, "프로필 조회와 수정은 치증봇 개인 채팅에서만 가능합니다.", { inline_keyboard: [[{ text: "👤 치증봇 개인 채팅 열기", url: "https://t.me/chicken_aram_bot" }]] });
   if (message.chat.type !== "group" && message.chat.type !== "supergroup") return void await sendTelegramMessage(chatId, "치증봇은 텔레그램 그룹에서 사용해 주세요.");
 
   if (command.name === "help" || command.name === "start") return void await sendTelegramMessage(chatId, helpMessage());
@@ -118,8 +174,60 @@ async function handleMessage(message: TelegramMessage) {
 
 async function handleCallback(query: TelegramCallbackQuery) {
   const message = query.message;
-  if (!message || !query.data || (message.chat.type !== "group" && message.chat.type !== "supergroup")) return void await answerTelegramCallback(query.id, "사용할 수 없는 버튼입니다.");
+  if (!message || !query.data) return void await answerTelegramCallback(query.id, "사용할 수 없는 버튼입니다.");
   const chatId = message.chat.id;
+  if (query.data.startsWith("profile:")) {
+    if (message.chat.type !== "private") return void await answerTelegramCallback(query.id, "개인 채팅에서만 사용할 수 있습니다.");
+    if (query.data === "profile:view") {
+      await answerTelegramCallback(query.id);
+      return void await showTelegramProfile(chatId, query.from.id, message.message_id);
+    }
+    if (query.data === "profile:nickname") {
+      await answerTelegramCallback(query.id);
+      return void await editTelegramMessage(chatId, message.message_id, "✏️ 닉네임 수정\n\n/nickname 새이름 형식으로 입력해 주세요.\n예: /nickname 재미", profileBackKeyboard());
+    }
+    if (query.data === "profile:positions") {
+      await answerTelegramCallback(query.id);
+      return void await editTelegramMessage(chatId, message.message_id, "🎯 1순위 포지션을 선택해 주세요.\n올라운더를 선택하면 2순위는 선택할 수 없습니다.", primaryPositionKeyboard());
+    }
+    const primaryMatch = /^profile:position:p:([a-z])$/.exec(query.data);
+    if (primaryMatch) {
+      const primary = telegramPositionFromCode(primaryMatch[1]);
+      if (!primary) return void await answerTelegramCallback(query.id, "잘못된 포지션입니다.");
+      if (primary === "올라운더") {
+        if (!(await allowTelegramProfileWrite(query.from.id))) return void await answerTelegramCallback(query.id, "변경 요청이 너무 많습니다.");
+        if (!(await updateTelegramPositions(query.from.id, [primary]))) return void await showTelegramProfile(chatId, query.from.id, message.message_id);
+        await answerTelegramCallback(query.id, "포지션을 저장했습니다.");
+        return void await showTelegramProfile(chatId, query.from.id, message.message_id);
+      }
+      await answerTelegramCallback(query.id);
+      return void await editTelegramMessage(chatId, message.message_id, `🎯 1순위: ${primary}\n2순위 포지션을 선택해 주세요.`, secondaryPositionKeyboard(primaryMatch[1]));
+    }
+    const secondaryMatch = /^profile:position:s:([a-z]):([a-z])$/.exec(query.data);
+    if (secondaryMatch) {
+      const primary = telegramPositionFromCode(secondaryMatch[1]);
+      const secondary = secondaryMatch[2] === "n" ? null : telegramPositionFromCode(secondaryMatch[2]);
+      if (secondaryMatch[2] !== "n" && !secondary) return void await answerTelegramCallback(query.id, "잘못된 포지션입니다.");
+      const positions = primary ? normalizePlayerPositions([primary, ...(secondary ? [secondary] : [])]) : null;
+      if (!positions) return void await answerTelegramCallback(query.id, "잘못된 포지션 조합입니다.");
+      if (!(await allowTelegramProfileWrite(query.from.id))) return void await answerTelegramCallback(query.id, "변경 요청이 너무 많습니다.");
+      if (!(await updateTelegramPositions(query.from.id, positions))) return void await showTelegramProfile(chatId, query.from.id, message.message_id);
+      await answerTelegramCallback(query.id, "포지션을 저장했습니다.");
+      return void await showTelegramProfile(chatId, query.from.id, message.message_id);
+    }
+    if (query.data === "profile:unlink") {
+      await answerTelegramCallback(query.id);
+      return void await editTelegramMessage(chatId, message.message_id, "⚠️ Telegram 연동을 해제하면 모집·MVP 투표가 치증 계정에 연결되지 않습니다.\n정말 해제하시겠습니까?", { inline_keyboard: [[{ text: "연동 해제 확인", callback_data: "profile:unlink-confirm" }], [{ text: "취소", callback_data: "profile:view" }]] });
+    }
+    if (query.data === "profile:unlink-confirm") {
+      if (!(await allowTelegramProfileWrite(query.from.id))) return void await answerTelegramCallback(query.id, "변경 요청이 너무 많습니다.");
+      await unlinkTelegramProfile(query.from.id);
+      await answerTelegramCallback(query.id, "연동을 해제했습니다.");
+      return void await showTelegramProfile(chatId, query.from.id, message.message_id);
+    }
+    return void await answerTelegramCallback(query.id, "잘못된 프로필 버튼입니다.");
+  }
+  if (message.chat.type !== "group" && message.chat.type !== "supergroup") return void await answerTelegramCallback(query.id, "사용할 수 없는 버튼입니다.");
   const scheduledDate = todayInKorea();
   const mvpMatch = /^mvp:(\d+):(\d+)$/.exec(query.data);
   if (mvpMatch) {

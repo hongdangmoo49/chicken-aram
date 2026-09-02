@@ -18,6 +18,8 @@ await telegram("setMyCommands", { commands: [
   { command: "cancle", description: "시간별 참여 취소: /cancle 9" },
   { command: "result", description: "경기 결과 등록: /result 9 3 1" },
   { command: "list", description: "현재 모집과 참여자 보기" },
+  { command: "profile", description: "내 프로필 조회·수정 (개인 채팅)" },
+  { command: "nickname", description: "닉네임 수정: /nickname 새이름" },
   { command: "help", description: "치증봇 사용법" },
 ] });
 await telegram("setWebhook", { url: `${siteUrl.replace(/\/$/, "")}/api/telegram/webhook`, secret_token: secret, allowed_updates: ["message", "callback_query"] });
