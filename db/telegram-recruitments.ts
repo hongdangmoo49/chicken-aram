@@ -15,6 +15,7 @@ type RecruitmentRow = {
   target_count: number;
   status: "open" | "full";
 };
+type RecruitmentVoteRow = { telegram_user_id: number | string; display_name: string; username: string | null; created_at: string };
 
 const recruitmentFields = "id,chat_id,message_id,match_id,scheduled_date,hour,target_count,status";
 
@@ -56,10 +57,9 @@ export async function consumeTelegramLink(token: string, telegramUserId: number,
 }
 
 export async function claimTelegramUpdate(updateId: number) {
-  const { error } = await createSupabaseAdminClient().from("telegram_updates").insert({ update_id: updateId });
-  if (!error) return true;
-  if ((error as { code?: string }).code === "23505") return false;
-  fail("Telegram update 저장 실패", error);
+  const { data, error } = await createSupabaseAdminClient().rpc("claim_telegram_update", { p_update_id: updateId });
+  if (error) fail("Telegram update 저장 실패", error);
+  return data === true;
 }
 
 export async function releaseTelegramUpdate(updateId: number) {
@@ -106,16 +106,23 @@ export async function failRecruitment(recruitmentId: number) {
 }
 
 async function recruitmentView(row: RecruitmentRow): Promise<RecruitmentView> {
-  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitment_votes").select("telegram_user_id,display_name,username").eq("recruitment_id", row.id).order("created_at");
+  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitment_votes").select("telegram_user_id,display_name,username,created_at").eq("recruitment_id", row.id).order("created_at");
   if (error) fail("Telegram 참여자 조회 실패", error);
-  return { id: Number(row.id), scheduledDate: row.scheduled_date, hour: Number(row.hour), status: row.status, targetCount: Number(row.target_count), matchId: row.match_id === null ? null : Number(row.match_id), votes: (data ?? []).map((vote) => ({ telegramUserId: Number(vote.telegram_user_id), displayName: vote.display_name, username: vote.username })) as RecruitmentVoteView[] };
+  return recruitmentViewFromRows(row, data ?? []);
+}
+
+function recruitmentViewFromRows(row: RecruitmentRow, votes: RecruitmentVoteRow[]): RecruitmentView {
+  return { id: Number(row.id), scheduledDate: row.scheduled_date, hour: Number(row.hour), status: row.status, targetCount: Number(row.target_count), matchId: row.match_id === null ? null : Number(row.match_id), votes: [...votes].sort((a, b) => a.created_at.localeCompare(b.created_at)).map((vote) => ({ telegramUserId: Number(vote.telegram_user_id), displayName: vote.display_name, username: vote.username })) as RecruitmentVoteView[] };
 }
 
 export async function listRecruitments(chatId: number, scheduledDate: string) {
   await expireRecruitments(chatId);
-  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitments").select(recruitmentFields).eq("chat_id", chatId).eq("scheduled_date", scheduledDate).in("status", ["open", "full"]).order("hour");
+  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitments").select(`${recruitmentFields},telegram_recruitment_votes(telegram_user_id,display_name,username,created_at)`).eq("chat_id", chatId).eq("scheduled_date", scheduledDate).in("status", ["open", "full"]).order("hour");
   if (error) fail("Telegram 모집 목록 조회 실패", error);
-  return Promise.all(((data ?? []) as RecruitmentRow[]).map(async (row) => ({ row, view: await recruitmentView(row) })));
+  return (data ?? []).map((item) => {
+    const row = item as unknown as RecruitmentRow & { telegram_recruitment_votes: RecruitmentVoteRow[] };
+    return { row, view: recruitmentViewFromRows(row, row.telegram_recruitment_votes) };
+  });
 }
 
 export async function removeRecruitment(chatId: number, scheduledDate: string, recruitmentId: number) {
@@ -158,30 +165,22 @@ export async function createScheduleFromRecruitment(input: { chatId: number; sch
 
 async function saveVoteForRecruitment(row: RecruitmentRow, input: { telegramUserId: number; displayName: string; username: string | null; cancel: boolean }) {
   const admin = createSupabaseAdminClient();
-  if (row.match_id !== null) return { row, view: await recruitmentView(row), accepted: false, becameFull: false, locked: true };
-  const { data: existing, error: existingError } = await admin.from("telegram_recruitment_votes").select("telegram_user_id").eq("recruitment_id", row.id).eq("telegram_user_id", input.telegramUserId).maybeSingle();
-  if (existingError) fail("Telegram 기존 참여 조회 실패", existingError);
-
-  if (input.cancel) {
-    const { error } = await admin.from("telegram_recruitment_votes").delete().eq("recruitment_id", row.id).eq("telegram_user_id", input.telegramUserId);
-    if (error) fail("Telegram 참여 취소 실패", error);
-  } else if (row.status === "full" && !existing) {
-    return { row, view: await recruitmentView(row), accepted: false, becameFull: false, locked: false };
-  } else {
-    const { error } = await admin.from("telegram_recruitment_votes").upsert({ recruitment_id: row.id, telegram_user_id: input.telegramUserId, display_name: input.displayName, username: input.username, updated_at: new Date().toISOString() }, { onConflict: "recruitment_id,telegram_user_id" });
-    if (error) fail("Telegram 참여 저장 실패", error);
-  }
-
+  const { data, error } = await admin.rpc("save_telegram_recruitment_vote", {
+    p_recruitment_id: row.id,
+    p_chat_id: row.chat_id,
+    p_scheduled_date: row.scheduled_date,
+    p_telegram_user_id: input.telegramUserId,
+    p_display_name: input.displayName,
+    p_username: input.username ?? "",
+    p_cancel: input.cancel,
+  });
+  if (error) fail("Telegram 참여 저장 실패", error);
+  const result = data as { status: "saved" | "full" | "locked" | "not_found"; recruitmentStatus?: "open" | "full"; becameFull?: boolean };
+  if (result.status === "not_found") return null;
+  if (result.status === "full") row.status = "full";
+  else if (result.recruitmentStatus) row.status = result.recruitmentStatus;
   const view = await recruitmentView(row);
-  const nextStatus = view.votes.length >= row.target_count ? "full" : "open";
-  const becameFull = row.status !== "full" && nextStatus === "full";
-  if (nextStatus !== row.status) {
-    const { error } = await admin.from("telegram_recruitments").update({ status: nextStatus }).eq("id", row.id);
-    if (error) fail("Telegram 모집 상태 변경 실패", error);
-    row.status = nextStatus;
-    view.status = nextStatus;
-  }
-  return { row, view, accepted: true, becameFull, locked: false };
+  return { row, view, accepted: result.status === "saved", becameFull: result.becameFull === true, locked: result.status === "locked" };
 }
 
 export async function saveRecruitmentVote(input: { chatId: number; scheduledDate: string; telegramUserId: number; displayName: string; username: string | null; hour: number; cancel: boolean }) {

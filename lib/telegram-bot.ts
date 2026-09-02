@@ -11,7 +11,7 @@ function botToken() {
 }
 
 async function callTelegram<T>(method: string, body: Record<string, unknown>, ignoreNotModified = false): Promise<T | null> {
-  const response = await fetch(`https://api.telegram.org/bot${botToken()}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), cache: "no-store" });
+  const response = await fetch(`https://api.telegram.org/bot${botToken()}/${method}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), cache: "no-store", signal: AbortSignal.timeout(8_000) });
   const result = await response.json() as TelegramResponse<T>;
   if (!result.ok) {
     if (ignoreNotModified && result.description?.includes("message is not modified")) return null;

@@ -46,7 +46,7 @@ test("lists today's recruitments including full games", () => {
 });
 
 test("secures and persists webhook updates", async () => {
-  const [route, database, telegramProfile, profileFormatter, migration, linkMigration, scheduleMigration, profile, linkButton, linkRoute, unlinkRoute, setup] = await Promise.all([
+  const [route, database, telegramProfile, profileFormatter, migration, linkMigration, scheduleMigration, hardeningMigration, profile, linkButton, linkRoute, unlinkRoute, setup, telegramApi] = await Promise.all([
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/telegram-recruitments.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/telegram-profile.ts", import.meta.url), "utf8"),
@@ -54,11 +54,13 @@ test("secures and persists webhook updates", async () => {
     readFile(new URL("../supabase/migrations/202608280027_add_telegram_recruitments.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608280028_link_telegram_accounts.sql", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/202608290029_create_schedule_from_telegram.sql", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/202609020034_harden_telegram_recruitment.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/profile/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/profile/telegram-app-link.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/api/profile/telegram-link/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/profile/telegram-unlink/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../scripts/setup-telegram-bot.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../lib/telegram-bot.ts", import.meta.url), "utf8"),
   ]);
   assert.match(route, /x-telegram-bot-api-secret-token/);
   assert.match(route, /timingSafeEqual/);
@@ -88,6 +90,12 @@ test("secures and persists webhook updates", async () => {
   assert.match(database, /\.eq\("scheduled_date", scheduledDate\)/);
   assert.match(database, /update\(\{ status: "expired" \}\).*\.is\("match_id", null\)/);
   assert.match(database, /create_telegram_schedule/);
+  assert.match(database, /save_telegram_recruitment_vote/);
+  assert.match(database, /claim_telegram_update/);
+  assert.match(hardeningMigration, /for update/);
+  assert.match(hardeningMigration, /vote_count >= recruitment\.target_count/);
+  assert.match(hardeningMigration, /processed_at < now\(\) - interval '7 days'/);
+  assert.match(telegramApi, /AbortSignal\.timeout\(8_000\)/);
   assert.doesNotMatch(route, /sendPoll|poll_answer/);
   assert.match(migration, /telegram_recruitments_one_time_per_chat/);
   assert.match(migration, /scheduled_date date not null/);

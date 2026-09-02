@@ -38,6 +38,32 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: target.allow
     await admin.from("request_rate_limits").delete().eq("key", rateKey);
   }
 
+  const chatId = -Date.now();
+  const scheduledDate = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  let recruitmentId;
+  try {
+    const recruitment = await admin.from("telegram_recruitments").insert({ chat_id: chatId, created_by: 1, scheduled_date: scheduledDate, hour: 23 }).select("id").single();
+    assert.ifError(recruitment.error);
+    recruitmentId = recruitment.data.id;
+    const votes = await Promise.all(Array.from({ length: 11 }, (_, index) => admin.rpc("save_telegram_recruitment_vote", {
+      p_recruitment_id: recruitmentId,
+      p_chat_id: chatId,
+      p_scheduled_date: scheduledDate,
+      p_telegram_user_id: 10_000 + index,
+      p_display_name: `voter-${index}`,
+      p_username: "",
+      p_cancel: false,
+    })));
+    votes.forEach((vote) => assert.ifError(vote.error));
+    assert.equal(votes.filter((vote) => vote.data.status === "saved").length, 10);
+    assert.equal(votes.filter((vote) => vote.data.status === "full").length, 1);
+    const count = await admin.from("telegram_recruitment_votes").select("telegram_user_id", { count: "exact", head: true }).eq("recruitment_id", recruitmentId);
+    assert.ifError(count.error);
+    assert.equal(count.count, 10);
+  } finally {
+    if (recruitmentId) assert.ifError((await admin.from("telegram_recruitments").delete().eq("id", recruitmentId)).error);
+  }
+
   const invalidSchedule = await admin.rpc("create_balanced_schedule", {
     p_scheduled_at: new Date().toISOString(),
     p_map: "증강 칼바람 협곡",
