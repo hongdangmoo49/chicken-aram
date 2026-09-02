@@ -20,7 +20,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   try {
     if (action === "delete") {
-      await deleteScheduledMatch(id);
+      await deleteScheduledMatch(id, user.id);
       return redirectWithToast(request, "/schedule", "success", "예정 대전을 삭제했습니다.");
     }
 
@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (action === "replacePlayers") {
       const teams = normalizeTeamPlayers(form.getAll("teamAPlayers"), form.getAll("teamBPlayers"));
       if (!teams) return redirectWithToast(request, "/schedule", "error", "A팀과 B팀에 중복 없이 5명씩 선택해 주세요.");
-      await replaceScheduledMatchPlayers({ id, scheduledAt: scheduledAtIso, map, ...teams });
+      await replaceScheduledMatchPlayers({ id, scheduledAt: scheduledAtIso, map, actorId: user.id, ...teams });
       return redirectWithToast(request, "/schedule", "success", "팀 선수를 교체했습니다.");
     }
     if (action === "rebalance") {
@@ -44,10 +44,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         const group = Number(form.get(`group_${playerId}`));
         if (Number.isInteger(group) && group >= 1 && group <= 5) groups.set(group, [...(groups.get(group) ?? []), playerId]);
       }
-      await rebalanceScheduledMatch({ id, scheduledAt: scheduledAtIso, map, playerIds, separatedGroups: [...groups.values()] });
+      await rebalanceScheduledMatch({ id, scheduledAt: scheduledAtIso, map, playerIds, separatedGroups: [...groups.values()], actorId: user.id });
       return redirectWithToast(request, "/schedule", "success", "일정과 팀을 재편성했습니다.");
     }
-    await updateScheduledMatch(id, scheduledAtIso, map);
+    await updateScheduledMatch(id, scheduledAtIso, map, user.id);
     return redirectWithToast(request, "/schedule", "success", "예정 대전을 수정했습니다.");
   } catch (error) {
     const errorId = reportError("schedule.update", error, { matchId: id, action });

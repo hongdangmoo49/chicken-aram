@@ -292,20 +292,14 @@ export async function createBalancedSchedule(input: {
   expirePublicCache(MATCHES_CACHE_TAG);
 }
 
-export async function updateScheduledMatch(id: number, scheduledAt: string, map: string) {
+export async function updateScheduledMatch(id: number, scheduledAt: string, map: string, actorId: string) {
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from("matches")
-    .update({ scheduled_at: scheduledAt, map })
-    .eq("id", id)
-    .eq("status", "scheduled")
-    .select("id")
-    .maybeSingle();
-  if (error || !data) fail("예정 대전 수정 실패", error);
+  const { error } = await admin.rpc("update_scheduled_match", { p_match_id: id, p_scheduled_at: scheduledAt, p_map: map, p_actor_id: actorId });
+  if (error) fail("예정 대전 수정 실패", error);
   expirePublicCache(MATCHES_CACHE_TAG);
 }
 
-export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: string; map: string; playerIds: number[]; separatedGroups: number[][] }) {
+export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: string; map: string; playerIds: number[]; separatedGroups: number[][]; actorId: string }) {
   const allPlayers = await loadPlayers();
   const selected = input.playerIds.map((id) => allPlayers.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
   const admin = createSupabaseAdminClient();
@@ -314,33 +308,27 @@ export async function rebalanceScheduledMatch(input: { id: number; scheduledAt: 
   const { teamA, teamB } = balanceTeams(selected, input.separatedGroups, (currentMembers ?? []).filter((member) => member.team === "A").map((member) => Number(member.player_id)));
   const groupByPlayer = new Map(input.separatedGroups.flatMap((group, index) => group.map((id) => [id, index + 1] as const)));
   const assignments = [...teamA.map((player) => ({ playerId: player.id, team: "A" as const })), ...teamB.map((player) => ({ playerId: player.id, team: "B" as const }))].map((assignment) => ({ ...assignment, separatedGroup: groupByPlayer.get(assignment.playerId) ?? null }));
-  const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments });
+  const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments, p_actor_id: input.actorId });
   if (error) fail("팀 재편성 실패", error);
   expirePublicCache(MATCHES_CACHE_TAG);
 }
 
-export async function replaceScheduledMatchPlayers(input: { id: number; scheduledAt: string; map: string; teamAIds: number[]; teamBIds: number[] }) {
+export async function replaceScheduledMatchPlayers(input: { id: number; scheduledAt: string; map: string; teamAIds: number[]; teamBIds: number[]; actorId: string }) {
   const allPlayers = await loadPlayers();
   const selected = [...input.teamAIds, ...input.teamBIds].map((id) => allPlayers.find((player) => player.id === id)).filter((player): player is Player => Boolean(player));
   if (selected.length !== 10) throw new Error("교체할 선수 정보를 확인해 주세요.");
   if (selected.some((player) => player.tier === coachTier)) throw new Error("코치는 대전 참가자로 선택할 수 없습니다.");
   const admin = createSupabaseAdminClient();
   const assignments = [...input.teamAIds.map((playerId) => ({ playerId, team: "A" as const })), ...input.teamBIds.map((playerId) => ({ playerId, team: "B" as const }))].map((assignment) => ({ ...assignment, separatedGroup: null }));
-  const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments });
+  const { error } = await admin.rpc("rebalance_scheduled_match", { p_match_id: input.id, p_scheduled_at: input.scheduledAt, p_map: input.map, p_assignments: assignments, p_actor_id: input.actorId });
   if (error) fail("팀 선수 교체 실패", error);
   expirePublicCache(MATCHES_CACHE_TAG);
 }
 
-export async function deleteScheduledMatch(id: number) {
+export async function deleteScheduledMatch(id: number, actorId: string) {
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from("matches")
-    .delete()
-    .eq("id", id)
-    .eq("status", "scheduled")
-    .select("id")
-    .maybeSingle();
-  if (error || !data) fail("예정 대전 삭제 실패", error);
+  const { error } = await admin.rpc("delete_scheduled_match", { p_match_id: id, p_actor_id: actorId });
+  if (error) fail("예정 대전 삭제 실패", error);
   expirePublicCache(MATCHES_CACHE_TAG);
 }
 

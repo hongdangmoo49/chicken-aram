@@ -11,9 +11,23 @@ const target = remoteIntegrationTarget();
 
 const client = (key) => createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 
-test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: target.allowed ? false : "A non-production Supabase test project and explicit opt-in are required" }, async () => {
+test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: target.allowed ? false : "A non-production Supabase test project and explicit opt-in are required" }, async (t) => {
   const admin = client(serviceRoleKey);
   const anonymous = client(publishableKey);
+
+  const actorSuffix = randomUUID().slice(0, 8);
+  const actor = await admin.auth.admin.createUser({ email: `smoke-admin-${actorSuffix}@example.com`, password: `Smoke!9-${randomUUID()}`, email_confirm: true, user_metadata: { display_name: `smoke-admin-${actorSuffix}` } });
+  assert.ifError(actor.error);
+  const actorId = actor.data.user.id;
+  const actorProfile = await admin.from("profiles").select("player_id").eq("id", actorId).single();
+  assert.ifError(actorProfile.error);
+  const actorPlayerId = actorProfile.data.player_id;
+  assert.ifError((await admin.from("profiles").update({ role: "super_admin" }).eq("id", actorId)).error);
+  t.after(async () => {
+    await admin.from("audit_logs").delete().eq("actor_id", actorId);
+    await admin.auth.admin.deleteUser(actorId);
+    if (actorPlayerId) await admin.from("players").delete().eq("id", actorPlayerId);
+  });
 
   const matchCounts = await anonymous.rpc("get_match_counts").single();
   assert.ifError(matchCounts.error);
@@ -67,7 +81,7 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: target.allow
   const invalidSchedule = await admin.rpc("create_balanced_schedule", {
     p_scheduled_at: new Date().toISOString(),
     p_map: "증강 칼바람 협곡",
-    p_created_by: null,
+    p_created_by: actorId,
     p_assignments: [],
   });
   assert.match(invalidSchedule.error?.message ?? "", /invalid schedule input/);
@@ -80,7 +94,7 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: target.allow
     const schedule = await admin.rpc("create_balanced_schedule", {
       p_scheduled_at: new Date(Date.now() + 86_400_000).toISOString(),
       p_map: "통합 테스트",
-      p_created_by: null,
+      p_created_by: actorId,
       p_assignments: playable.data.map((player, index) => ({
         playerId: player.id,
         team: index < 5 ? "A" : "B",
@@ -123,24 +137,30 @@ test("remote Supabase auth, RLS, triggers, and write RPCs", { skip: target.allow
     assert.equal(Array.isArray(profile.data.players), false);
     playerId = profile.data.player_id;
 
-    const promoted = await admin.rpc("set_member_roles", {
+    const unauthorized = await admin.rpc("set_member_roles", {
       changes: [{ userId, role: "admin" }],
       p_actor_id: userId,
+    });
+    assert.match(unauthorized.error?.message ?? "", /required actor role is missing/);
+    const promoted = await admin.rpc("set_member_roles", {
+      changes: [{ userId, role: "admin" }],
+      p_actor_id: actorId,
     });
     assert.ifError(promoted.error);
     const audit = await admin
       .from("audit_logs")
       .select("actor_id,actor_name,action,before_data,after_data")
-      .eq("actor_id", userId)
+      .eq("actor_id", actorId)
       .eq("action", "members.role.update")
+      .contains("after_data", [{ userId, displayName: nickname, role: "admin" }])
       .single();
     assert.ifError(audit.error);
-    assert.equal(audit.data.actor_name, nickname);
+    assert.equal(audit.data.actor_name, `smoke-admin-${actorSuffix}`);
     assert.equal(audit.data.before_data[0].role, "user");
     assert.equal(audit.data.after_data[0].role, "admin");
     assert.ifError((await admin.rpc("set_member_roles", {
       changes: [{ userId, role: "user" }],
-      p_actor_id: userId,
+      p_actor_id: actorId,
     })).error);
 
     const player = await admin.from("players").select("nickname").eq("id", playerId).single();

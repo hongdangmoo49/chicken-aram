@@ -4,6 +4,8 @@ import { takeRateLimit } from "../../../lib/rate-limit";
 import { reportError } from "../../../lib/observability";
 import { getCurrentUser } from "../../auth";
 
+const maps = new Set(["증강 칼바람 협곡", "칼바람 나락"]);
+
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return redirectWithToast(request, "/login", "error", "로그인이 필요합니다.");
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
   const scheduledAt = String(form.get("scheduledAt") ?? "").trim();
   const map = String(form.get("map") ?? "증강 칼바람 협곡").trim();
   const playerIds = [...new Set(form.getAll("players").map(Number).filter(Number.isInteger))];
-  if (!scheduledAt || Number.isNaN(Date.parse(scheduledAt)) || playerIds.length !== 10) return redirectWithToast(request, "/schedule", "error", "일시와 참가 선수 10명을 확인해 주세요.");
+  if (!scheduledAt || Number.isNaN(Date.parse(scheduledAt)) || !maps.has(map) || playerIds.length !== 10) return redirectWithToast(request, "/schedule", "error", "일시, 맵과 참가 선수 10명을 확인해 주세요.");
 
   const groups = new Map<number, number[]>();
   for (const playerId of playerIds) {
