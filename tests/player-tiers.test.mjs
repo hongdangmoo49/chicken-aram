@@ -19,7 +19,7 @@ test("validates and deduplicates batch tier changes", () => {
 test("adjusts RP for manual admin tier moves without automatic progression", () => {
   assert.equal(adjustRankPointsForTierChange(0, 3, 1), -30);
   assert.equal(adjustRankPointsForTierChange(0, 3, 5), 30);
-  assert.equal(needsSuperAdminRankReview(2, 15), false);
+  assert.equal(needsSuperAdminRankReview(2, 15), true);
   assert.equal(needsSuperAdminRankReview(2, 16), true);
   assert.equal(needsSuperAdminRankReview(4, -15), true);
   assert.equal(needsSuperAdminRankReview(1, -50), true);

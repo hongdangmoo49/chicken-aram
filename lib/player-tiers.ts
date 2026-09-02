@@ -15,7 +15,7 @@ export function adjustRankPointsForTierChange(points: number, fromTier: number, 
 }
 
 export function needsSuperAdminRankReview(tier: number, points: number) {
-  return tier >= 1 && tier <= 5 && ((tier > 1 && points > promotionPoints) || (tier < 5 && points <= demotionPoints));
+  return tier >= 1 && tier <= 5 && ((tier > 1 && points >= promotionPoints) || (tier < 5 && points <= demotionPoints));
 }
 
 export function normalizeTierChanges(value: unknown): PlayerTierChange[] | null {
