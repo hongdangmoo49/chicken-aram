@@ -3,18 +3,20 @@ import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, createSche
 import { castTelegramMvpVote, getTelegramMvpState, saveTelegramMatchResult, syncTelegramMvpMessage, telegramMvpKeyboard, telegramMvpText } from "../../../../db/telegram-mvp";
 import { getTelegramProfile, unlinkTelegramProfile, updateTelegramNickname, updateTelegramPositions } from "../../../../db/telegram-profile";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
-import { formatRecruitment, formatRecruitmentList, formatTelegramMatchResult, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
+import { formatRecruitment, formatRecruitmentList, formatTelegramMatchResult, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, telegramWelcomeMessage, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
 import { normalizePlayerPositions, telegramPositionFromCode, telegramPositionOptions } from "../../../../lib/player-positions";
 import { takeRateLimit } from "../../../../lib/rate-limit";
 import { siteUrl } from "../../../../lib/site-url";
 import { formatTelegramProfile } from "../../../../lib/telegram-profile";
 
+type TelegramUser = { id: number; is_bot: boolean; first_name: string; last_name?: string; username?: string };
 type TelegramMessage = {
   message_id: number;
   text?: string;
   chat: { id: number; type: string };
-  from?: { id: number; first_name: string; last_name?: string; username?: string };
+  from?: TelegramUser;
+  new_chat_members?: TelegramUser[];
 };
 type TelegramCallbackQuery = { id: string; data?: string; from: NonNullable<TelegramMessage["from"]>; message?: TelegramMessage };
 type TelegramUpdate = { update_id: number; message?: TelegramMessage; callback_query?: TelegramCallbackQuery };
@@ -92,6 +94,9 @@ async function allowTelegramProfileWrite(telegramUserId: number) {
 }
 
 async function handleMessage(message: TelegramMessage) {
+  if ((message.chat.type === "group" || message.chat.type === "supergroup") && message.new_chat_members?.some((member) => !member.is_bot)) {
+    return void await sendTelegramMessage(message.chat.id, telegramWelcomeMessage);
+  }
   if (!message.text || !message.from) return;
   const command = parseTelegramCommand(message.text);
   if (!command) return;

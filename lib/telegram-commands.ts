@@ -2,6 +2,44 @@ export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "r
 export type RecruitmentVoteView = { telegramUserId: number; displayName: string; username: string | null };
 export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full" | "expired" | "failed"; targetCount: number; matchId: number | null; matchStatus?: "scheduled" | "completed" | null; votes: RecruitmentVoteView[] };
 
+export const telegramWelcomeMessage = [
+  "치킨증바람방에 오신 걸 환영합니다!",
+  "",
+  "처음 들어오셨다면 치증 사이트 (https://chicken-aram.vercel.app/) 및 디스코드채널 (https://discord.gg/cjQ987bEh) 가입 후 텔레그램 계정을 연동해주세요.",
+  "",
+  "아래는 치킨증바람방의 기본 게임 규칙입니다.",
+  "",
+  "게임 규칙",
+  "",
+  "1) 경기 방식",
+  "치증방은 기본적으로 5판 3선승제(BO5)로 진행합니다.",
+  "",
+  "2) 닷지 규칙",
+  "양 팀은 총 5판 중 각각 1회씩 닷지할 수 있습니다.",
+  "",
+  "3) 5꽉 진영 선택",
+  "경기가 2:2까지 가서 마지막 5세트까지 진행될 경우,",
+  "양 팀 대표자의 가위바위보를 통해 마지막 판 진영을 결정합니다.",
+  "",
+  "4) MVP 투표",
+  "게임 종료 후에는 텔레그램방에서 반드시 MVP 투표를 진행해주세요.",
+  "",
+  "5) 치킨 지급",
+  "게임 종료 후 치킨은 배달의민족 / 쿠팡이츠 2만원 상품권으로 각자 지급해주시면 됩니다.",
+  "",
+  "6) 마이크 필수",
+  "게임 중 원활한 소통을 위해 마이크 사용은 필수입니다.",
+  "",
+  "7) 피드백 및 비난 관련 규칙",
+  "게임의 퀄리티를 높이기 위한 강도 높은 피드백은 허용합니다.",
+  "다만, 감정적인 욕설이나 원색적인 비난은 삼가주세요.",
+  "",
+  "❌ XX님 진짜 줱같이 못하시네요.",
+  "⭕ XX님 지금 너무 던지고 계신데 집중해주세요.",
+  "",
+  "재밌게 게임하되, 서로 기본적인 선은 지켜주세요.",
+].join("\n");
+
 export function parseTelegramCommand(text: string): TelegramCommand | null {
   const [raw = "", ...arguments_] = text.trim().split(/\s+/);
   if (!raw.startsWith("/")) return null;

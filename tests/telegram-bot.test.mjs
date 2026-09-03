@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { formatRecruitment, formatRecruitmentList, formatTelegramMatchResult, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, recruitmentScheduledAt } from "../lib/telegram-commands.ts";
+import { formatRecruitment, formatRecruitmentList, formatTelegramMatchResult, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, recruitmentScheduledAt, telegramWelcomeMessage } from "../lib/telegram-commands.ts";
 
 test("parses custom recruitment commands without native Telegram polls", () => {
   assert.deepEqual(parseTelegramCommand("/create@chijeung_bot"), { name: "create", argument: "" });
@@ -25,6 +25,15 @@ test("parses custom recruitment commands without native Telegram polls", () => {
   assert.deepEqual(parseTelegramResult("21 3 1"), { hour: 21, aScore: 3, bScore: 1, winner: "A" });
   assert.deepEqual(parseTelegramResult("9 1 2"), { hour: 9, aScore: 1, bScore: 2, winner: "B" });
   assert.equal(parseTelegramResult("21 2 2"), null);
+});
+
+test("welcomes new human group members with the game rules", () => {
+  assert.match(telegramWelcomeMessage, /치킨증바람방에 오신 걸 환영합니다/);
+  assert.match(telegramWelcomeMessage, /chicken-aram\.vercel\.app/);
+  assert.match(telegramWelcomeMessage, /discord\.gg\/cjQ987bEh/);
+  assert.match(telegramWelcomeMessage, /5판 3선승제\(BO5\)/);
+  assert.match(telegramWelcomeMessage, /MVP 투표/);
+  assert.ok(telegramWelcomeMessage.length <= 4096);
 });
 
 test("lists participants for a created start time", () => {
@@ -87,6 +96,7 @@ test("secures and persists webhook updates", async () => {
   assert.match(route, /telegramMvpText/);
   assert.match(route, /경기 종료/);
   assert.match(route, /message\.chat\.type === "private"/);
+  assert.match(route, /new_chat_members\?\.some\(\(member\) => !member\.is_bot\)/);
   assert.match(route, /command\.name === "profile"/);
   assert.match(route, /profile:position:p:/);
   assert.match(route, /profile:position:s:/);
