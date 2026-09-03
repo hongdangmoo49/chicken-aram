@@ -59,6 +59,13 @@ test("formats completed match results for the Telegram list detail", () => {
   assert.match(formatRecruitment({ id: 9, scheduledDate: "2026-09-03", hour: 21, status: "expired", targetCount: 10, matchId: 12, matchStatus: "completed", votes: [] }), /🏁 경기 종료/);
 });
 
+test("shows assigned teams when a scheduled Telegram match is selected", () => {
+  const text = formatRecruitment({ id: 10, scheduledDate: "2026-09-03", hour: 22, status: "full", targetCount: 10, matchId: 13, matchStatus: "scheduled", matchTeams: { teamA: ["재미", "부처"], teamB: ["신사", "PEPE"] }, votes: [] });
+  assert.match(text, /🏟 대전 예정 생성됨/);
+  assert.match(text, /A TEAM[\s\S]*재미[\s\S]*부처[\s\S]*B TEAM[\s\S]*신사[\s\S]*PEPE/);
+  assert.doesNotMatch(text, /참여: \/vote/);
+});
+
 test("secures and persists webhook updates", async () => {
   const [route, database, telegramProfile, profileFormatter, migration, linkMigration, scheduleMigration, hardeningMigration, profile, linkButton, linkRoute, unlinkRoute, setup, telegramApi, proxy] = await Promise.all([
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
@@ -111,7 +118,7 @@ test("secures and persists webhook updates", async () => {
   assert.match(database, /create_telegram_schedule/);
   assert.match(database, /save_telegram_recruitment_vote/);
   assert.match(database, /claim_telegram_update/);
-  assert.match(database, /matches\(status\)/);
+  assert.match(database, /matches\(status,team_a,team_b\)/);
   assert.match(hardeningMigration, /for update/);
   assert.match(hardeningMigration, /vote_count >= recruitment\.target_count/);
   assert.match(hardeningMigration, /processed_at < now\(\) - interval '7 days'/);

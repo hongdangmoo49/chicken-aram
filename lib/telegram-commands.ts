@@ -1,6 +1,6 @@
 export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "result" | "profile" | "nickname" | "help" | "start"; argument: string };
 export type RecruitmentVoteView = { telegramUserId: number; displayName: string; username: string | null };
-export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full" | "expired" | "failed"; targetCount: number; matchId: number | null; matchStatus?: "scheduled" | "completed" | null; votes: RecruitmentVoteView[] };
+export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full" | "expired" | "failed"; targetCount: number; matchId: number | null; matchStatus?: "scheduled" | "completed" | null; matchTeams?: { teamA: string[]; teamB: string[] } | null; votes: RecruitmentVoteView[] };
 
 export const telegramWelcomeMessage = [
   "치킨증바람방에 오신 걸 환영합니다!",
@@ -81,11 +81,14 @@ function voterName(vote: RecruitmentVoteView) {
 export function formatRecruitment(recruitment: RecruitmentView) {
   const names = recruitment.votes.map((vote) => `- ${voterName(vote)}`).join("\n");
   const status = recruitment.matchStatus === "completed" ? "🏁 경기 종료" : recruitment.matchId ? "🏟 대전 예정 생성됨" : recruitment.status === "full" ? "✅ 모집 완료" : "모집 중";
+  const roster = recruitment.matchTeams
+    ? ["A TEAM", ...recruitment.matchTeams.teamA.map((name) => `- ${name}`), "", "B TEAM", ...recruitment.matchTeams.teamB.map((name) => `- ${name}`)].join("\n")
+    : names || "아직 참여자가 없습니다.";
   return [
     `📢 ${recruitment.scheduledDate} ${recruitment.hour}시 치증 모집`,
     `${status} · ${recruitment.votes.length}/${recruitment.targetCount}명`,
     "",
-    names || "아직 참여자가 없습니다.",
+    roster,
     "",
     ...(recruitment.matchId ? [] : [`참여: /vote ${recruitment.hour}`, `참여취소: /cancle ${recruitment.hour}`]),
     "현재 목록: /list",

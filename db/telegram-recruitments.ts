@@ -15,7 +15,7 @@ type RecruitmentRow = {
   hour: number;
   target_count: number;
   status: "open" | "full" | "expired" | "failed";
-  matches?: { status: "scheduled" | "completed" } | null;
+  matches?: { status: "scheduled" | "completed"; team_a: string[]; team_b: string[] } | null;
 };
 type RecruitmentVoteRow = { telegram_user_id: number | string; display_name: string; username: string | null; created_at: string };
 
@@ -83,7 +83,7 @@ async function recruitmentAt(chatId: number, scheduledDate: string, hour: number
 
 export async function getRecruitmentById(chatId: number, scheduledDate: string, recruitmentId: number) {
   await expireRecruitments(chatId);
-  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitments").select(`${recruitmentFields},matches(status)`).eq("id", recruitmentId).eq("chat_id", chatId).eq("scheduled_date", scheduledDate).maybeSingle();
+  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitments").select(`${recruitmentFields},matches(status,team_a,team_b)`).eq("id", recruitmentId).eq("chat_id", chatId).eq("scheduled_date", scheduledDate).maybeSingle();
   if (error) fail("Telegram 모집 상세 조회 실패", error);
   const row = data as RecruitmentRow | null;
   return row && ((row.status === "open" || row.status === "full") || row.match_id !== null) ? { row, view: await recruitmentView(row) } : null;
@@ -114,12 +114,12 @@ async function recruitmentView(row: RecruitmentRow): Promise<RecruitmentView> {
 }
 
 function recruitmentViewFromRows(row: RecruitmentRow, votes: RecruitmentVoteRow[]): RecruitmentView {
-  return { id: Number(row.id), scheduledDate: row.scheduled_date, hour: Number(row.hour), status: row.status, targetCount: Number(row.target_count), matchId: row.match_id === null ? null : Number(row.match_id), matchStatus: row.matches?.status ?? null, votes: [...votes].sort((a, b) => a.created_at.localeCompare(b.created_at)).map((vote) => ({ telegramUserId: Number(vote.telegram_user_id), displayName: vote.display_name, username: vote.username })) as RecruitmentVoteView[] };
+  return { id: Number(row.id), scheduledDate: row.scheduled_date, hour: Number(row.hour), status: row.status, targetCount: Number(row.target_count), matchId: row.match_id === null ? null : Number(row.match_id), matchStatus: row.matches?.status ?? null, matchTeams: row.matches ? { teamA: row.matches.team_a, teamB: row.matches.team_b } : null, votes: [...votes].sort((a, b) => a.created_at.localeCompare(b.created_at)).map((vote) => ({ telegramUserId: Number(vote.telegram_user_id), displayName: vote.display_name, username: vote.username })) as RecruitmentVoteView[] };
 }
 
 export async function listRecruitments(chatId: number, scheduledDate: string) {
   await expireRecruitments(chatId);
-  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitments").select(`${recruitmentFields},matches(status),telegram_recruitment_votes(telegram_user_id,display_name,username,created_at)`).eq("chat_id", chatId).eq("scheduled_date", scheduledDate).order("hour");
+  const { data, error } = await createSupabaseAdminClient().from("telegram_recruitments").select(`${recruitmentFields},matches(status,team_a,team_b),telegram_recruitment_votes(telegram_user_id,display_name,username,created_at)`).eq("chat_id", chatId).eq("scheduled_date", scheduledDate).order("hour");
   if (error) fail("Telegram 모집 목록 조회 실패", error);
   return (data ?? []).filter((item) => item.status === "open" || item.status === "full" || item.match_id !== null).map((item) => {
     const row = item as unknown as RecruitmentRow & { telegram_recruitment_votes: RecruitmentVoteRow[] };
