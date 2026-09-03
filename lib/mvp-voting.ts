@@ -15,6 +15,14 @@ export function topMvpCandidateIds(votes: Pick<MvpVote, "candidatePlayerId">[]) 
   return new Set([...counts].filter(([, count]) => count === topVotes).map(([id]) => id));
 }
 
+export function missingMvpVoters(members: TelegramMvpMember[], candidateTeam: "A" | "B", voterIds: number[]) {
+  const voted = new Set(voterIds);
+  return members
+    .filter((member) => member.team !== candidateTeam && !voted.has(member.playerId))
+    .map((member) => ({ id: member.playerId, nickname: member.nickname }))
+    .sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
+}
+
 export function buildTelegramMvpContests(members: TelegramMvpMember[], votes: { candidateTeam: "A" | "B"; round: number; candidatePlayerId: number }[], awards: { team: "A" | "B"; playerId: number; nickname: string }[]): TelegramMvpContest[] {
   return (["A", "B"] as const).map((candidateTeam) => {
     const award = awards.find((item) => item.team === candidateTeam);

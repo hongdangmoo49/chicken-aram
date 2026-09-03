@@ -2,7 +2,7 @@ import { revalidateTag } from "next/cache";
 import { createSupabaseAdminClient } from "../lib/supabase/admin";
 import type { AppRole } from "../lib/app-roles";
 import type { MemberRoleChange } from "../lib/member-roles";
-import { currentMvpRound } from "../lib/mvp-voting";
+import { currentMvpRound, missingMvpVoters } from "../lib/mvp-voting";
 import { calculateRoundRecord, formatRecentMatchRecord, type PlayerMatchResult, type PlayerRoundResult } from "../lib/player-records";
 
 export type { AppRole } from "../lib/app-roles";
@@ -44,6 +44,7 @@ export type PendingMvpMatch = {
     votesCast: number;
     candidates: { id: number; nickname: string }[];
     votes: { voterId: number; voterNickname: string; candidatePlayerId: number; candidateNickname: string }[];
+    missingVoters: { id: number; nickname: string }[];
   }[];
 };
 
@@ -138,8 +139,8 @@ export async function getPendingMvpMatches(): Promise<PendingMvpMatch[]> {
     const matchId = Number(match.id);
     const members = (memberResult.data ?? [])
       .filter((member) => Number(member.match_id) === matchId)
-      .map((member) => ({ id: Number(member.player_id), team: member.team as "A" | "B", nickname: (member.players as unknown as { nickname: string }).nickname }));
-    const nicknameByPlayerId = new Map(members.map((member) => [member.id, member.nickname]));
+      .map((member) => ({ playerId: Number(member.player_id), team: member.team as "A" | "B", nickname: (member.players as unknown as { nickname: string }).nickname }));
+    const nicknameByPlayerId = new Map(members.map((member) => [member.playerId, member.nickname]));
     const contests = (["A", "B"] as const).flatMap((team) => {
       if (awards.has(`${matchId}:${team}`)) return [];
       const votes = (voteResult.data ?? [])
@@ -148,7 +149,7 @@ export async function getPendingMvpMatches(): Promise<PendingMvpMatch[]> {
       const round = currentMvpRound(votes);
       const candidates = members
         .filter((member) => member.team === team)
-        .map(({ id, nickname }) => ({ id, nickname }))
+        .map(({ playerId: id, nickname }) => ({ id, nickname }))
         .sort((a, b) => a.nickname.localeCompare(b.nickname, "ko"));
       const currentVotes = votes.filter((vote) => vote.round === round);
       return [{
@@ -162,6 +163,7 @@ export async function getPendingMvpMatches(): Promise<PendingMvpMatch[]> {
           candidatePlayerId: vote.candidatePlayerId,
           candidateNickname: nicknameByPlayerId.get(vote.candidatePlayerId) ?? `선수 #${vote.candidatePlayerId}`,
         })).sort((a, b) => a.voterNickname.localeCompare(b.voterNickname, "ko")),
+        missingVoters: missingMvpVoters(members, team, currentVotes.map((vote) => vote.voterId)),
       }];
     });
     return contests.length ? [{ id: matchId, playedAt: String(match.played_at), map: String(match.map), aScore: Number(match.a_score), bScore: Number(match.b_score), contests }] : [];

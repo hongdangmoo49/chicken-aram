@@ -281,6 +281,7 @@ button, input, select { font: inherit; }
 .pending-mvp-votes span { padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--muted); font-size: 10px; }
 .pending-mvp-votes span b { color: var(--text); }
 .pending-mvp-votes p { margin: 0; color: var(--muted); font-size: 10px; }
+.pending-mvp-missing b { color: #ffad72; }
 .member-heading { display: flex; justify-content: space-between; align-items: end; gap: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .member-heading h2 { margin: 7px 0 0; font-size: 24px; }
 .member-heading p { max-width: 520px; margin: 0; color: var(--muted); font-size: 12px; }

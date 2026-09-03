@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { buildTelegramMvpContests, currentMvpRound, topMvpCandidateIds } from "../lib/mvp-voting.ts";
+import { buildTelegramMvpContests, currentMvpRound, missingMvpVoters, topMvpCandidateIds } from "../lib/mvp-voting.ts";
 
 test("opens a runoff after five votes and keeps only tied leaders", () => {
   const votes = [1, 1, 2, 2, 3].map((candidatePlayerId) => ({ round: 1, candidatePlayerId }));
@@ -16,6 +16,12 @@ test("builds shared Telegram MVP contests for runoff and finalized teams", () =>
   const contests = buildTelegramMvpContests(members, votes, [{ team: "B", playerId: 6, nickname: "B6" }]);
   assert.deepEqual(contests[0], { candidateTeam: "A", round: 2, votesCast: 0, candidates: [{ id: 1, nickname: "A1" }, { id: 2, nickname: "A2" }], winner: null });
   assert.deepEqual(contests[1], { candidateTeam: "B", round: 1, votesCast: 5, candidates: [], winner: { id: 6, nickname: "B6" } });
+});
+
+test("lists only opposing participants who have not voted in the current round", () => {
+  const members = [1, 2].map((playerId) => ({ playerId, team: "A", nickname: `A${playerId}` })).concat([3, 4, 5].map((playerId) => ({ playerId, team: "B", nickname: `B${playerId}` })));
+  assert.deepEqual(missingMvpVoters(members, "A", [3, 5]), [{ id: 4, nickname: "B4" }]);
+  assert.deepEqual(missingMvpVoters(members, "B", []), [{ id: 1, nickname: "A1" }, { id: 2, nickname: "A2" }]);
 });
 
 test("enforces opponent-only voting and awards one RP once", async () => {
@@ -64,7 +70,9 @@ test("enforces opponent-only voting and awards one RP once", async () => {
   assert.match(membersPage, /canManageRoles && <PendingMvpPanel/);
   assert.match(membersPage, /MVP 확정 · RP \+1/);
   assert.match(membersPage, /현재 투표 내용/);
+  assert.match(membersPage, /미투표/);
   assert.match(membersPage, /voterNickname.*candidateNickname/);
+  assert.match(roles, /missingMvpVoters/);
   assert.match(roles, /getPendingMvpMatches/);
   assert.match(roles, /voter_player_id,candidate_player_id/);
   assert.match(roles, /admin_finalize_match_mvp/);
