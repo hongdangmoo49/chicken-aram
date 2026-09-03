@@ -1,6 +1,6 @@
 export type TelegramCommand = { name: "create" | "vote" | "cancle" | "list" | "result" | "profile" | "nickname" | "help" | "start"; argument: string };
 export type RecruitmentVoteView = { telegramUserId: number; displayName: string; username: string | null };
-export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full"; targetCount: number; matchId: number | null; votes: RecruitmentVoteView[] };
+export type RecruitmentView = { id: number; scheduledDate: string; hour: number; status: "open" | "full" | "expired" | "failed"; targetCount: number; matchId: number | null; matchStatus?: "scheduled" | "completed" | null; votes: RecruitmentVoteView[] };
 
 export function parseTelegramCommand(text: string): TelegramCommand | null {
   const [raw = "", ...arguments_] = text.trim().split(/\s+/);
@@ -42,17 +42,20 @@ function voterName(vote: RecruitmentVoteView) {
 
 export function formatRecruitment(recruitment: RecruitmentView) {
   const names = recruitment.votes.map((vote) => `- ${voterName(vote)}`).join("\n");
+  const status = recruitment.matchStatus === "completed" ? "🏁 경기 종료" : recruitment.matchId ? "🏟 대전 예정 생성됨" : recruitment.status === "full" ? "✅ 모집 완료" : "모집 중";
   return [
     `📢 ${recruitment.scheduledDate} ${recruitment.hour}시 치증 모집`,
-    `${recruitment.status === "full" ? "✅ 모집 완료" : "모집 중"} · ${recruitment.votes.length}/${recruitment.targetCount}명`,
-    ...(recruitment.matchId ? ["🏟 대전 예정 생성됨"] : []),
+    `${status} · ${recruitment.votes.length}/${recruitment.targetCount}명`,
     "",
     names || "아직 참여자가 없습니다.",
     "",
-    `참여: /vote ${recruitment.hour}`,
-    `참여취소: /cancle ${recruitment.hour}`,
+    ...(recruitment.matchId ? [] : [`참여: /vote ${recruitment.hour}`, `참여취소: /cancle ${recruitment.hour}`]),
     "현재 목록: /list",
   ].join("\n");
+}
+
+export function formatTelegramMatchResult(result: { aScore: number; bScore: number; winner: "A" | "B"; teamA: string[]; teamB: string[] }) {
+  return ["✅ 경기 결과 등록 완료", "", `A팀 ${result.aScore} : ${result.bScore} B팀`, `승리팀: ${result.winner}팀`, "", `A팀 · ${result.teamA.join(" · ")}`, `B팀 · ${result.teamB.join(" · ")}`, "", "MVP 투표를 시작했습니다."].join("\n");
 }
 
 export function formatRecruitmentList(recruitments: RecruitmentView[]) {

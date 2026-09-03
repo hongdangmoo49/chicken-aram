@@ -1,9 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { claimTelegramUpdate, consumeTelegramLink, createRecruitment, createScheduleFromRecruitment, failRecruitment, getRecruitmentById, listRecruitments, releaseTelegramUpdate, removeRecruitment, saveRecruitmentVote, saveRecruitmentVoteById, setRecruitmentMessage } from "../../../../db/telegram-recruitments";
-import { castTelegramMvpVote, saveTelegramMatchResult, syncTelegramMvpMessage } from "../../../../db/telegram-mvp";
+import { castTelegramMvpVote, getTelegramMvpState, saveTelegramMatchResult, syncTelegramMvpMessage, telegramMvpKeyboard, telegramMvpText } from "../../../../db/telegram-mvp";
 import { getTelegramProfile, unlinkTelegramProfile, updateTelegramNickname, updateTelegramPositions } from "../../../../db/telegram-profile";
 import { answerTelegramCallback, editTelegramMessage, isTelegramChatAdmin, sendTelegramMessage, type TelegramInlineKeyboard } from "../../../../lib/telegram-bot";
-import { formatRecruitment, formatRecruitmentList, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
+import { formatRecruitment, formatRecruitmentList, formatTelegramMatchResult, helpMessage, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, todayInKorea, type RecruitmentView } from "../../../../lib/telegram-commands";
 import { reportError } from "../../../../lib/observability";
 import { normalizePlayerPositions, telegramPositionFromCode, telegramPositionOptions } from "../../../../lib/player-positions";
 import { takeRateLimit } from "../../../../lib/rate-limit";
@@ -32,12 +32,13 @@ function displayName(user: NonNullable<TelegramMessage["from"]>) {
 }
 
 function listKeyboard(recruitments: RecruitmentView[]): TelegramInlineKeyboard {
-  return { inline_keyboard: recruitments.map((recruitment) => [{ text: `${recruitment.hour}시${recruitment.matchId ? " · 대전 생성됨" : recruitment.status === "full" ? " · 모집 완료" : ""} · ${recruitment.votes.length}/${recruitment.targetCount}명`, callback_data: `recruit:view:${recruitment.id}` }]) };
+  return { inline_keyboard: recruitments.map((recruitment) => [{ text: `${recruitment.hour}시${recruitment.matchStatus === "completed" ? " · 경기 종료" : recruitment.matchId ? " · 대전 생성됨" : recruitment.status === "full" ? " · 모집 완료" : ""} · ${recruitment.votes.length}/${recruitment.targetCount}명`, callback_data: `recruit:view:${recruitment.id}` }]) };
 }
 
 function detailKeyboard(recruitment: RecruitmentView): TelegramInlineKeyboard {
   const rows: TelegramInlineKeyboard["inline_keyboard"] = [];
-  if (recruitment.matchId) rows.push([{ text: "🏟 대전 예정에서 확인", url: `${siteUrl}/schedule#match-${recruitment.matchId}` }]);
+  if (recruitment.matchStatus === "completed") rows.push([{ text: "📊 대전 결과에서 확인", url: `${siteUrl}/results` }]);
+  else if (recruitment.matchId) rows.push([{ text: "🏟 대전 예정에서 확인", url: `${siteUrl}/schedule#match-${recruitment.matchId}` }]);
   else if (recruitment.status === "full") rows.push([{ text: "🏟 대전 예정 생성", callback_data: `recruit:schedule:${recruitment.id}` }], [{ text: "❌ 참여 취소", callback_data: `recruit:cancel:${recruitment.id}` }]);
   else rows.push([{ text: "✅ 참여하기", callback_data: `recruit:vote:${recruitment.id}` }, { text: "❌ 참여 취소", callback_data: `recruit:cancel:${recruitment.id}` }]);
   if (!recruitment.matchId) rows.push([{ text: "🗑 모집 삭제", callback_data: `recruit:delete:${recruitment.id}` }]);
@@ -150,7 +151,7 @@ async function handleMessage(message: TelegramMessage) {
     if (result.status === "not_authorized") return void await sendTelegramMessage(chatId, "사이트 관리자 계정과 Telegram을 연동해 주세요.");
     await syncTelegramMvpMessage(result.matchId);
     if (result.status === "already_completed") return void await sendTelegramMessage(chatId, "이미 결과가 등록된 경기입니다. MVP 투표 메시지를 갱신했습니다.");
-    return void await sendTelegramMessage(chatId, [`✅ 경기 결과 등록 완료`, "", `A팀 ${result.aScore} : ${result.bScore} B팀`, `승리팀: ${result.winner}팀`, "", `A팀 · ${result.teamA.join(" · ")}`, `B팀 · ${result.teamB.join(" · ")}`, "", "MVP 투표를 시작했습니다."].join("\n"));
+    return void await sendTelegramMessage(chatId, formatTelegramMatchResult(result));
   }
 
   if (command.name === "vote" || command.name === "cancle") {
@@ -252,7 +253,16 @@ async function handleCallback(query: TelegramCallbackQuery) {
   const recruitmentId = Number(match[2]);
   if (action === "view") {
     const recruitment = await getRecruitmentById(chatId, scheduledDate, recruitmentId);
-    if (!recruitment) return void await answerTelegramCallback(query.id, "오늘 진행 중인 모집이 아닙니다.");
+    if (!recruitment) return void await answerTelegramCallback(query.id, "오늘 모집 또는 경기를 찾을 수 없습니다.");
+    if (recruitment.view.matchStatus === "completed" && recruitment.view.matchId) {
+      const state = await getTelegramMvpState(recruitment.view.matchId);
+      if (state) {
+        const keyboard = telegramMvpKeyboard(state);
+        keyboard.inline_keyboard.push([{ text: "⬅️ 오늘 모집 목록", callback_data: "recruit:list" }]);
+        await editTelegramMessage(chatId, message.message_id, `${formatTelegramMatchResult(state)}\n\n${telegramMvpText(state)}`, keyboard);
+        return void await answerTelegramCallback(query.id);
+      }
+    }
     await editTelegramMessage(chatId, message.message_id, formatRecruitment(recruitment.view), detailKeyboard(recruitment.view));
     return void await answerTelegramCallback(query.id);
   }

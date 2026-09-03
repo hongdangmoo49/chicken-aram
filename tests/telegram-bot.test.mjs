@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { formatRecruitment, formatRecruitmentList, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, recruitmentScheduledAt } from "../lib/telegram-commands.ts";
+import { formatRecruitment, formatRecruitmentList, formatTelegramMatchResult, parseTelegramCommand, parseTelegramLinkToken, parseTelegramResult, parseVoteHour, recruitmentScheduledAt } from "../lib/telegram-commands.ts";
 
 test("parses custom recruitment commands without native Telegram polls", () => {
   assert.deepEqual(parseTelegramCommand("/create@chijeung_bot"), { name: "create", argument: "" });
@@ -45,6 +45,11 @@ test("lists today's recruitments including full games", () => {
   assert.match(formatRecruitmentList(recruitments), /오늘 치증 모집 2개/);
 });
 
+test("formats completed match results for the Telegram list detail", () => {
+  assert.match(formatTelegramMatchResult({ aScore: 3, bScore: 1, winner: "A", teamA: ["A1", "A2"], teamB: ["B1", "B2"] }), /A팀 3 : 1 B팀[\s\S]*승리팀: A팀[\s\S]*A1 · A2[\s\S]*MVP 투표를 시작했습니다/);
+  assert.match(formatRecruitment({ id: 9, scheduledDate: "2026-09-03", hour: 21, status: "expired", targetCount: 10, matchId: 12, matchStatus: "completed", votes: [] }), /🏁 경기 종료/);
+});
+
 test("secures and persists webhook updates", async () => {
   const [route, database, telegramProfile, profileFormatter, migration, linkMigration, scheduleMigration, hardeningMigration, profile, linkButton, linkRoute, unlinkRoute, setup, telegramApi, proxy] = await Promise.all([
     readFile(new URL("../app/api/telegram/webhook/route.ts", import.meta.url), "utf8"),
@@ -78,6 +83,9 @@ test("secures and persists webhook updates", async () => {
   assert.match(route, /removeRecruitment/);
   assert.match(route, /saveTelegramMatchResult/);
   assert.match(route, /command\.name === "result"/);
+  assert.match(route, /getTelegramMvpState/);
+  assert.match(route, /telegramMvpText/);
+  assert.match(route, /경기 종료/);
   assert.match(route, /message\.chat\.type === "private"/);
   assert.match(route, /command\.name === "profile"/);
   assert.match(route, /profile:position:p:/);
@@ -93,6 +101,7 @@ test("secures and persists webhook updates", async () => {
   assert.match(database, /create_telegram_schedule/);
   assert.match(database, /save_telegram_recruitment_vote/);
   assert.match(database, /claim_telegram_update/);
+  assert.match(database, /matches\(status\)/);
   assert.match(hardeningMigration, /for update/);
   assert.match(hardeningMigration, /vote_count >= recruitment\.target_count/);
   assert.match(hardeningMigration, /processed_at < now\(\) - interval '7 days'/);
